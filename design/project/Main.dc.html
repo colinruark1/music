@@ -14,8 +14,8 @@ body{margin:0;background:#1B242A}
 a{color:#F1EEE6}a:hover{color:#FFFFFF}
 button{font-family:inherit;cursor:pointer}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #F1EEE6;outline-offset:3px}
-.grain::after{content:"";position:absolute;inset:0;background:url(/_blob/dd151d96f2525bfea0d503fe1697f045) 0 0/180px 180px;opacity:var(--grain,.25);mix-blend-mode:overlay;pointer-events:none;z-index:5}
-.ocean{background:linear-gradient(to bottom,rgba(27,36,42,.55) 0,rgba(27,36,42,0) 46%,rgba(27,36,42,0) 84%,#1B242A 100%),#546067 url(/_blob/19ef719a2ab77ff6ff2d87fdd8cdc308) center 70%/cover no-repeat}
+.grain::after{content:"";position:absolute;inset:0;background:url(/_blob/dd151d96f2525bfea0d503fe1697f045) 0 0/180px 180px;opacity:var(--grain,.25);mix-blend-mode:overlay;pointer-events:none;z-index:5;--hero-h:clamp(720px,70vw,980px);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.5) 0,rgba(0,0,0,.5) calc(var(--hero-h) - 80px),#000 calc(var(--hero-h) + 80px));mask-image:linear-gradient(to bottom,rgba(0,0,0,.5) 0,rgba(0,0,0,.5) calc(var(--hero-h) - 80px),#000 calc(var(--hero-h) + 80px))}
+.ocean{background:linear-gradient(to bottom,rgba(27,36,42,.55) 0,rgba(27,36,42,0) 46%,rgba(27,36,42,0) 84%,#1B242A 100%),#546067 url(/assets/ocean-fence-hero.jpg) center 70%/cover no-repeat}
 .shore{background:linear-gradient(rgba(27,36,42,.72),rgba(27,36,42,.72)),#3C4A54 url(/_blob/19ef719a2ab77ff6ff2d87fdd8cdc308) center 92%/cover no-repeat}
 .sand a{color:#1B242A}.sand a:hover{color:#3C4A54}
 .sand a:focus-visible{outline-color:#1B242A}
@@ -139,7 +139,7 @@ Hear the new session</a>
 <div style="max-width: 1280px; margin: 0 auto; padding: 112px 24px; display: flex; flex-wrap: wrap; gap: 48px 80px">
 <div style="flex: 1.2 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
 <h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: lowercase">The porch</h2>
-<p style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: clamp(26px, 3vw, 40px); line-height: 1.2">if it was up to me, we'd be tangled up on the beach, you saying everything I wanna hear</p>
+<p style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: clamp(26px, 3vw, 40px); line-height: 1.2">if it was up to me, we'd be tangled up on the beach, you singing everything I wanna hear</p>
 <!-- <p style="margin: 0; max-width: 34em; color: #D5D9D8">[SHORT BIO: where she plays, how long she has been playing, what the guitar is, and what the view is from the chair.]</p> -->
 </div>
 <ul style="flex: 1 1 320px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
@@ -162,7 +162,7 @@ Hear the new session</a>
 <section id="letters" style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px 64px">
 <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
 <h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">Subscribe</h2>
-<p style="margin: 0; max-width: 28em; color: #C3C9CA">Letters from the coastline: a short note about tour dates and new singles.</p>
+<p style="margin: 0; max-width: 28em; color: #C3C9CA">Letters from the coastline: a short note about tour dates and newly singles.</p>
 </div>
 <form style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
 <label for="letters-email" style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Email address</label>

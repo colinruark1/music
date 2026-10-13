@@ -2,6 +2,8 @@ import sys
 import numpy as np
 from PIL import Image, ImageFilter
 src, out_dir = sys.argv[1], sys.argv[2]
+# optional grain strength: 1.0 is the full grain, lower is finer
+strength = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
 rng = np.random.default_rng(7)
 im = Image.open(src).convert('RGB')
 W, H = im.size
@@ -28,8 +30,8 @@ a = a*(1 - 0.16*np.clip(xx**2+yy**2-0.35,0,None))
 coarse = rng.normal(0,1,(h//2+1,w//2+1)).astype(np.float32)
 coarse = np.asarray(Image.fromarray(coarse).resize((w,h), Image.BICUBIC))
 fine = rng.normal(0,1,(h,w)).astype(np.float32)
-g = (0.075*coarse + 0.045*fine)[:,:,None]
-chroma = rng.normal(0,0.012,(h,w,3)).astype(np.float32)
+g = (0.075*coarse + 0.045*fine)[:,:,None]*strength
+chroma = rng.normal(0,0.012,(h,w,3)).astype(np.float32)*strength
 a = a + g*(0.55+0.9*(1-np.abs(a.mean(-1,keepdims=True)-0.5)*2)) + chroma
 a = np.clip(a,0,1)
 res = Image.fromarray((a*255).astype(np.uint8))

@@ -38,6 +38,11 @@ graded version (needs Pillow and NumPy):
 python3 design/tools/grade.py design/assets/ocean-fence-original.jpg design/assets
 ```
 
+The landing section uses `assets/ocean-fence-hero.jpg`, the same photo with
+the grain at 0.45 strength (pass the strength as a third argument). It is not
+on the canvas, so the home page points at it by file path (`/assets/...`),
+which only the local server resolves.
+
 That also writes a `preview.jpg`, and it does not reproduce one manual step:
 the blue sign on the right was desaturated afterwards.
 
