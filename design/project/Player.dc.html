@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zach Top session player</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+body{margin:0}
+a{color:#CDBBAA}a:hover{color:#F4E9DA}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid #F4E9DA;outline-offset:3px}
+input[type=range]{width:100%;height:44px;margin:0;background:transparent}
+.grain::after{content:"";position:absolute;inset:0;background:url(/_blob/dd151d96f2525bfea0d503fe1697f045) 0 0/180px 180px;opacity:.5;mix-blend-mode:overlay;pointer-events:none;z-index:5}
+</style>
+</helmet>
+<div class="grain" style="position: relative; overflow: hidden; width: 390px; height: 844px; box-sizing: border-box; padding: 20px 24px 28px; background: #150B09; color: #F4E9DA; font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 16px; line-height: 1.45; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button type="button" aria-label="Back to sessions" style="width: 44px; height: 44px; border: 1.5px solid #5A3A32; border-radius: 2px; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#F4E9DA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l5 5 5-5"></path></svg>
+</button>
+<div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 0.2em; text-transform: uppercase">Barroom session 01</div>
+<button type="button" aria-label="Share this session" style="width: 44px; height: 44px; border: 1.5px solid #5A3A32; border-radius: 2px; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#F4E9DA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V3M6 6.5L10 3l4 3.5M4 11v5h12v-5"></path></svg>
+</button>
+</div>
+
+<img src="/assets/album-cold-beer-and-country-music.jpg" alt="Album cover of Cold Beer &amp; Country Music: Zach Top in a black cowboy hat and striped western shirt" style="display: block; width: 100%; height: 250px; flex: none; object-fit: cover; object-position: 50% 32%; border-radius: 2px">
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 40px; line-height: 1.05">I Never Lie</h1>
+<div style="color: #CDBBAA">Zach Top · recorded [date], [location]</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<label for="scrub" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)">Position in song</label>
+<input id="scrub" type="range" min="0" max="100" value="34" style="accent-color: {{accent}}">
+<div style="display: flex; justify-content: space-between; font-size: 14px; color: #CDBBAA; font-variant-numeric: tabular-nums">
+<span>[0:00]</span>
+<span>[0:00]</span>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: center; gap: 28px">
+<button type="button" aria-label="Previous song" style="width: 52px; height: 52px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><path d="M22 4v18L9 13zM4 4h3v18H4z" fill="#F4E9DA"></path></svg>
+</button>
+<button type="button" aria-label="Pause" style="width: 76px; height: 76px; border: 0; border-radius: 50%; background: {{accent}}; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><path d="M6 4h5v18H6zM15 4h5v18h-5z" fill="#150B09"></path></svg>
+</button>
+<button type="button" aria-label="Next song" style="width: 52px; height: 52px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><path d="M4 4v18l13-9zM19 4h3v18h-3z" fill="#F4E9DA"></path></svg>
+</button>
+</div>
+
+<div style="margin-top: auto; padding: 14px 0 0; border-top: 1.5px solid #5A3A32; display: flex; flex-direction: column">
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 2px">
+<div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: 0.08em; text-transform: uppercase">What you hear</div>
+<div style="font-size: 14px; color: #CDBBAA">Mix the band</div>
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<label for="mix-guitar" style="width: 96px; flex: none; font-weight: 600">Guitar</label>
+<input id="mix-guitar" type="range" min="0" max="100" value="80" style="accent-color: {{accent}}">
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<label for="mix-waves" style="width: 96px; flex: none; font-weight: 600">Fiddle</label>
+<input id="mix-waves" type="range" min="0" max="100" value="55" style="accent-color: {{accent}}">
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<label for="mix-chair" style="width: 96px; flex: none; font-weight: 600">Steel guitar</label>
+<input id="mix-chair" type="range" min="0" max="100" value="30" style="accent-color: {{accent}}">
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF5A47","options":["#FF5A47","#F2B45C","#F4E9DA"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#FF5A47' };
+  }
+}
+</script>
+</body>
+</html>

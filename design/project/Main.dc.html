@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zach Top</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Instrument+Serif:ital@0;1&amp;display=swap">
+<style>
+body{margin:0;background:#150B09}
+a{color:#F4E9DA}a:hover{color:#FFFFFF}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #F4E9DA;outline-offset:3px}
+.grain::after{content:"";position:absolute;inset:0;background:url(/_blob/dd151d96f2525bfea0d503fe1697f045) 0 0/180px 180px;opacity:var(--grain,.25);mix-blend-mode:overlay;pointer-events:none;z-index:5}
+.hero{min-height:clamp(720px,70vw,980px)}
+.hero-bar{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.hero-scrim{position:absolute;inset:0;background:linear-gradient(to right,rgba(21,11,9,.78) 0,rgba(21,11,9,.3) 44%,rgba(21,11,9,0) 68%),linear-gradient(to bottom,rgba(21,11,9,.6) 0,rgba(21,11,9,0) 24%,rgba(21,11,9,0) 80%,#150B09 100%)}
+.hero-artist{position:absolute;right:-2%;bottom:0;width:min(80%,1120px);height:auto;filter:drop-shadow(0 0 44px rgba(255,70,50,.28));-webkit-mask-image:linear-gradient(to bottom,#000 86%,transparent 100%);mask-image:linear-gradient(to bottom,#000 86%,transparent 100%)}
+.neon{text-shadow:0 0 26px rgba(255,84,62,.6),0 0 3px rgba(255,214,200,.5)}
+.backroom{background:linear-gradient(rgba(21,11,9,.8),rgba(21,11,9,.8)),#3A1611 url(/assets/neon-bar-still.jpg) center 60%/cover no-repeat}
+.poster a{color:#1A0E0B}.poster a:hover{color:#5A2A20}
+.poster a:focus-visible{outline-color:#1A0E0B}
+@media (max-width:760px){.hero{min-height:calc(520px + 92vw)}.hero-artist{width:132%;right:-26%}.hero-scrim{background:linear-gradient(to bottom,rgba(21,11,9,.82) 0,rgba(21,11,9,.5) 46%,rgba(21,11,9,0) 70%,#150B09 100%)}}
+</style>
+</helmet>
+<div class="grain" style="--grain: {{grain}}; position: relative; overflow: hidden; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: #F4E9DA; background: #150B09; font-size: 17px; line-height: 1.55">
+
+<section id="top" class="hero" style="position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; background: #3A1611">
+<picture>
+<source media="(prefers-reduced-motion: reduce)" srcset="/assets/neon-bar-still.jpg">
+<img class="hero-bar" src="/assets/neon-bar.gif" alt="" aria-hidden="true">
+</picture>
+<div class="hero-scrim"></div>
+<img class="hero-artist" src="/assets/zach-top-cutout.png" alt="Zach Top in a black cowboy hat, playing an acoustic guitar">
+<header style="position: relative; z-index: 2; width: 100%; max-width: 1280px; box-sizing: border-box; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 32px">
+<a href="#top" style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: 0.16em; text-transform: uppercase; text-decoration: none">ZACH TOP</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase"><a href="#music" style="padding: 12px; text-decoration: none">Music</a><a href="#sessions" style="padding: 12px; text-decoration: none">Tour</a><a href="#about" style="padding: 12px; text-decoration: none">About</a><a href="#letters" style="padding: 12px; text-decoration: none">Subscribe</a></nav>
+</header>
+
+<div style="position: relative; z-index: 2; width: 100%; max-width: 1280px; box-sizing: border-box; margin: 0 auto; padding: clamp(20px, 4vw, 56px) 24px 96px">
+<div style="max-width: 560px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px">
+<div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.22em; text-transform: uppercase">COLD BEER &amp; COUNTRY MUSIC · AIN'T IN IT FOR MY HEALTH</div>
+<h1 class="neon" style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: clamp(64px, 10.5vw, 156px); line-height: 0.92; letter-spacing: -0.015em">Zach Top</h1>
+<p style="margin: 0; max-width: 16em; font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: clamp(22px, 2.5vw, 34px); line-height: 1.2">country music that sounds like the radio used to</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; padding-top: 10px">
+<a href="#music" style="display: inline-flex; align-items: center; gap: 10px; min-height: 52px; box-sizing: border-box; padding: 0 26px; border-radius: 2px; background: {{accent}}; color: #150B09; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path d="M3 1.5v13l11-6.5z" fill="#150B09"></path></svg>
+Hear the new record</a>
+<a href="#sessions" style="display: inline-flex; align-items: center; min-height: 52px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; border: 1.5px solid #F4E9DA; background: rgba(21, 11, 9, 0.45); font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Find a show</a>
+</div>
+</div>
+</div>
+</section>
+
+<section id="music" style="max-width: 1280px; margin: 0 auto; padding: 56px 24px 104px; display: flex; flex-direction: column; gap: 36px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; padding-bottom: 14px; border-bottom: 1.5px solid #5A3A32">
+<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">Music</h2>
+<a href="#music" style="padding: 12px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase">See all</a>
+</div>
+<p style="margin: 0; max-width: 30em; font-size: 19px; color: #CDBBAA">Can you put that Zach Top record on?</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px 24px">
+
+<article style="display: flex; flex-direction: column; gap: 12px">
+<img src="/assets/album-cold-beer-and-country-music.jpg" alt="Album cover of Cold Beer &amp; Country Music: Zach Top in a black cowboy hat and striped western shirt" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #3A1611; box-sizing: border-box; border: 6px solid #F4E9DA">
+<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">I Never Lie</div>
+<div style="margin-top: -6px; color: #CDBBAA">Cold Beer &amp; Country Music · 2024</div>
+<a href="#music" style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Stream / Download</a>
+</article>
+
+<article style="display: flex; flex-direction: column; gap: 12px">
+<img src="/assets/album-cold-beer-and-country-music.jpg" alt="Album cover of Cold Beer &amp; Country Music: Zach Top in a black cowboy hat and striped western shirt" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #3A1611; box-sizing: border-box; border: 6px solid #F4E9DA">
+<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">Sounds Like the Radio</div>
+<div style="margin-top: -6px; color: #CDBBAA">Cold Beer &amp; Country Music · 2024</div>
+<a href="#music" style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Stream / Download</a>
+</article>
+
+<article style="display: flex; flex-direction: column; gap: 12px">
+<img src="/assets/album-aint-in-it-for-my-health.jpg" alt="Album cover of Ain't in It for My Health: Zach Top playing an acoustic guitar in red light" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #3A1611; box-sizing: border-box; border: 6px solid #F4E9DA">
+<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">Good Times &amp; Tan Lines</div>
+<div style="margin-top: -6px; color: #CDBBAA">Ain't in It for My Health · 2025</div>
+<a href="#music" style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Stream / Download</a>
+</article>
+
+<article style="display: flex; flex-direction: column; gap: 12px">
+<img src="/assets/album-aint-in-it-for-my-health.jpg" alt="Album cover of Ain't in It for My Health: Zach Top playing an acoustic guitar in red light" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #3A1611; box-sizing: border-box; border: 6px solid #F4E9DA">
+<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">South of Sanity</div>
+<div style="margin-top: -6px; color: #CDBBAA">Ain't in It for My Health · 2025</div>
+<a href="#music" style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Stream / Download</a>
+</article>
+
+</div>
+</section>
+
+<section id="sessions" class="poster" style="background: #E9DCC5; color: #150B09">
+<div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px 104px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px">
+<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">On the road</h2>
+<p style="margin: 0; max-width: 26em; color: #5A4338">Honky-tonks, fairgrounds and arenas all across the U.S.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; border-top: 1.5px solid #150B09">
+
+<div style="padding: 22px 0; border-bottom: 1.5px solid #150B09; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
+<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span style="color: #5A4338">[Town, State]</span>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #5A4338">[Time] · [Location]</div>
+<a href="#letters" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #150B09; color: #F4E9DA; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Get tickets</a>
+</div>
+
+<div style="padding: 22px 0; border-bottom: 1.5px solid #150B09; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
+<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span style="color: #5A4338">[Town, State]</span>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #5A4338">[Time] · [Location]</div>
+<a href="#letters" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #150B09; color: #F4E9DA; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Get tickets</a>
+</div>
+
+<div style="padding: 22px 0; border-bottom: 1.5px solid #150B09; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
+<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span style="color: #5A4338">[Town, State]</span>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #5A4338">[Time] · [Location]</div>
+<a href="#letters" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #150B09; color: #F4E9DA; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Get tickets</a>
+</div>
+
+<div style="padding: 22px 0; border-bottom: 1.5px solid #150B09; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
+<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span style="color: #5A4338">[Town, State]</span>
+</div>
+<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #5A4338">[Time] · [Location]</div>
+<a href="#letters" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #150B09; color: #F4E9DA; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Get tickets</a>
+</div>
+
+</div>
+</div>
+</section>
+
+<section id="about" class="backroom">
+<div style="max-width: 1280px; margin: 0 auto; padding: 112px 24px; display: flex; flex-wrap: wrap; gap: 48px 80px">
+<div style="flex: 1.2 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: lowercase">the radio</h2>
+<p style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: clamp(26px, 3vw, 40px); line-height: 1.2">a ranch kid from Sunnyside, Washington, raised on bluegrass and nineties country radio</p>
+<p style="margin: 0; max-width: 34em; color: #DCCBBB">Zach Top grew up playing bluegrass in a family band before moving to Nashville. His songs lean on fiddle, steel guitar and a flat-top acoustic, the kind of traditional country you'd expect to hear coming out of a jukebox.</p>
+</div>
+<ul style="flex: 1 1 320px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+<li style="padding: 20px 0; border-top: 1.5px solid #F4E9DA; display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase">Sunnyside, Washington</span>
+<span style="color: #DCCBBB">Raised on a ranch, and first on stage in Top String, the bluegrass band he started with his siblings.</span>
+</li>
+<li style="padding: 20px 0; border-top: 1.5px solid #F4E9DA; display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 24px; letter-spacing: 0.1em; text-transform: lowercase">Cold Beer &amp; Country Music</span>
+<span style="color: #DCCBBB">The 2024 debut country album, home of “Sounds Like the Radio” and “I Never Lie.”</span>
+</li>
+<li style="padding: 20px 0; border-top: 1.5px solid #F4E9DA; border-bottom: 1.5px solid #F4E9DA; display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase">Ain't in It for My Health</span>
+<span style="color: #DCCBBB">The 2025 follow-up, with “Good Times &amp; Tan Lines” and “South of Sanity.”</span>
+</li>
+</ul>
+</div>
+</section>
+
+<section id="letters" style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 28px 64px">
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">Subscribe</h2>
+<p style="margin: 0; max-width: 28em; color: #CDBBAA">Letters from the road: a short note about tour dates and new singles.</p>
+</div>
+<form style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<label for="letters-email" style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">Email address</label>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<input id="letters-email" type="email" autocomplete="email" placeholder="you@example.com" style="flex: 1 1 220px; min-width: 0; min-height: 52px; box-sizing: border-box; padding: 0 18px; border: 1.5px solid #F4E9DA; border-radius: 2px; background: #F4E9DA; color: #150B09; font: inherit">
+<button type="button" style="min-height: 52px; padding: 0 28px; border: 0; border-radius: 2px; background: {{accent}}; color: #150B09; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.14em; text-transform: uppercase">Sign me up</button>
+</div>
+</form>
+</section>
+
+<footer style="max-width: 1280px; margin: 0 auto; padding: 28px 24px 48px; border-top: 1.5px solid #5A3A32; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px">
+<div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase">Zach Top</div>
+<div style="display: flex; flex-wrap: wrap; gap: 0 8px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">
+<a href="#top" style="padding: 12px 8px">Streaming</a>
+<a href="#top" style="padding: 12px 8px">Instagram</a>
+<a href="#top" style="padding: 12px 8px">Booking</a>
+</div>
+</div>
+<div style="font-size: 14px; color: #CDBBAA">A fan-made concept site. Not affiliated with Zach Top or his label.</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF5A47","options":["#FF5A47","#F2B45C","#F4E9DA"]},"grain":{"editor":"range","default":0.25,"min":0,"max":0.8,"step":0.05},"$preview":{"width":1360,"height":3500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#FF5A47', grain: this.props.grain ?? 0.25 };
+  }
+}
+</script>
+</body>
+</html>
