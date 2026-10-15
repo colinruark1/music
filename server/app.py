@@ -1,13 +1,11 @@
-"""Temporary local backend for the site.
+"""Backend for the site: public pages, newsletter sign-ups, and the admin app
+at /login and /admin. Data lives in Supabase (see supabase/migrations/).
+Standard library only. Runs locally, and on Vercel through api/index.py.
 
-Serves the design source files in design/project/ as real pages, stores
-newsletter sign-ups, and runs the admin app at /login and /admin.
-Standard library only.
-
-    python3 server/app.py                      # http://127.0.0.1:8000
+    python3 server/app.py                            # http://127.0.0.1:8000
     PORT=5000 python3 server/app.py
-    python3 server/app.py add-admin megan      # create an admin, or reset a password
-    python3 server/app.py remove-admin megan
+    python3 server/app.py add-admin you@example.com  # create an admin, or reset a password
+    python3 server/app.py remove-admin you@example.com
     python3 server/app.py list-admins
 """
 
@@ -17,21 +15,20 @@ import html
 import io
 import json
 import mimetypes
-import os
 import re
-import secrets
 import sys
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+import config  # first: loads .env before anything reads settings
 import auth
+import db
 import mailer
 import music
 import subscribers
 from pages import ASSETS_DIR, render_page
-from store import MEDIA_DIR
 
 SERVER_DIR = Path(__file__).resolve().parent
 STATIC_DIR = SERVER_DIR / "static"
@@ -45,49 +42,72 @@ PAGES = {
     "/about": "About.dc.html",
     "/subscribe": "Subscribe.dc.html",
     "/player": "Player.dc.html",
+    "/privacy": "Privacy.dc.html",
 }
 # How many catalog tracks each page's Music grid shows (None = all).
 MUSIC_GRIDS = {"/": 4, "/music": None}
 
 MAX_BODY_BYTES = 10_000
 MAX_ADMIN_BODY_BYTES = 200_000
-UPLOAD_TYPES = {
-    ".jpg": 10_000_000, ".jpeg": 10_000_000, ".png": 10_000_000, ".webp": 10_000_000,
-    ".mp3": 60_000_000, ".m4a": 60_000_000, ".wav": 60_000_000,
-}
 SESSION_COOKIE = "mf_admin"
-SECURE_COOKIE = os.environ.get("COOKIE_SECURE") == "1"
 ADMIN_CSP = (
     "default-src 'self'; style-src 'self' https://fonts.googleapis.com; "
-    "font-src https://fonts.gstatic.com; img-src 'self' https: data:; "
-    "media-src 'self' https:; frame-ancestors 'none'; form-action 'self'"
+    f"font-src https://fonts.gstatic.com; img-src 'self' https: data: {config.SUPABASE_URL}; "
+    f"connect-src 'self' {config.SUPABASE_URL}; media-src 'self' https: {config.SUPABASE_URL}; "
+    "frame-ancestors 'none'; form-action 'self'"
 )
+BAD_UNSUBSCRIBE = {
+    "heading": "That link doesn't work",
+    "message": "Copy the whole unsubscribe link from the email and try again.",
+    "form": "",
+}
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MusicSiteDev/0.2"
+    server_version = "MeganFaithSite/0.3"
 
     # ---------- routing ----------
 
     def do_GET(self):
+        self.guard(self.route_get)
+
+    def do_POST(self):
+        self.guard(self.route_post)
+
+    def do_PUT(self):
+        self.guard(lambda: self.admin_write("PUT"))
+
+    def do_DELETE(self):
+        self.guard(lambda: self.admin_write("DELETE"))
+
+    def guard(self, route):
+        """Turn a Supabase outage into a clear error instead of a crash."""
+        try:
+            route()
+        except db.DatabaseError as error:
+            self.log_error("Supabase: %s", error)
+            if urlsplit(self.path).path.startswith("/api/"):
+                self.send_json(503, {"ok": False, "error": f"The database isn't answering: {error}"})
+            else:
+                self.send_text(503, "The site's database isn't answering. Try again in a minute.")
+
+    def route_get(self):
         url = urlsplit(self.path)
         path = url.path
         if path in PAGES:
             try:
                 page = render_page(PAGES[path])
-                if path in MUSIC_GRIDS:
-                    page = music.apply_catalog(page, MUSIC_GRIDS[path])
             except (OSError, ValueError) as error:
                 return self.send_text(500, f"Could not render {PAGES[path]}: {error}")
+            if path in MUSIC_GRIDS:
+                page = music.apply_catalog(page, MUSIC_GRIDS[path])
             return self.send_body(200, page.encode("utf-8"), "text/html; charset=utf-8")
         if path.startswith("/assets/"):
             return self.send_file(ASSETS_DIR, path[len("/assets/"):])
         if path.startswith("/static/"):
             return self.send_file(STATIC_DIR, path[len("/static/"):])
-        if path.startswith("/media/"):
-            return self.send_file(MEDIA_DIR, path[len("/media/"):])
         if path == "/api/health":
-            return self.send_json(200, {"ok": True})
+            return self.send_json(200, {"ok": True, "missing_settings": config.missing()})
         if path == "/login":
             if self.admin_user():
                 return self.redirect("/admin")
@@ -105,7 +125,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.admin_get(path, user)
         self.send_text(404, "Not found")
 
-    def do_POST(self):
+    def route_post(self):
         path = urlsplit(self.path).path
         if path == "/api/subscribe":
             return self.subscribe()
@@ -116,15 +136,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/logout":
             if not self.same_origin():
                 return self.send_json(403, {"ok": False, "error": "Cross-site request refused."})
-            auth.end_session(self.session_token())
             return self.send_json(200, {"ok": True}, cookie=self.session_cookie("", 0))
         return self.admin_write("POST")
-
-    def do_PUT(self):
-        self.admin_write("PUT")
-
-    def do_DELETE(self):
-        self.admin_write("DELETE")
 
     # ---------- public endpoints ----------
 
@@ -132,8 +145,7 @@ class Handler(BaseHTTPRequestHandler):
         payload = self.read_json(MAX_BODY_BYTES)
         if payload is None:
             return
-        email = payload.get("email", "")
-        email = email.strip() if isinstance(email, str) else ""
+        email = subscribers.normalize(payload.get("email", ""))
         if not subscribers.valid_email(email):
             return self.send_json(400, {"ok": False, "error": "That doesn't look like an email address."})
         if subscribers.add(email):
@@ -144,11 +156,7 @@ class Handler(BaseHTTPRequestHandler):
         email = query.get("email", [""])[0]
         token = query.get("token", [""])[0]
         if not mailer.check_unsubscribe_token(email, token):
-            return self.send_template("unsubscribe.html", {
-                "heading": "That link doesn't work",
-                "message": "Copy the whole unsubscribe link from the email and try again.",
-                "form": "",
-            }, status=400)
+            return self.send_template("unsubscribe.html", BAD_UNSUBSCRIBE, status=400)
         form = (
             '<form method="post" action="/unsubscribe">'
             f'<input type="hidden" name="email" value="{_attr(email)}">'
@@ -171,11 +179,7 @@ class Handler(BaseHTTPRequestHandler):
         email = (form.get("email") or query.get("email") or [""])[0]
         token = (form.get("token") or query.get("token") or [""])[0]
         if not mailer.check_unsubscribe_token(email, token):
-            return self.send_template("unsubscribe.html", {
-                "heading": "That link doesn't work",
-                "message": "Copy the whole unsubscribe link from the email and try again.",
-                "form": "",
-            }, status=400)
+            return self.send_template("unsubscribe.html", BAD_UNSUBSCRIBE, status=400)
         subscribers.remove(email)
         self.send_template("unsubscribe.html", {
             "heading": "You're unsubscribed",
@@ -186,27 +190,26 @@ class Handler(BaseHTTPRequestHandler):
     def login(self):
         if not self.same_origin():
             return self.send_json(403, {"ok": False, "error": "Cross-site request refused."})
-        client = self.client_address[0]
+        if config.missing():
+            return self.send_json(503, {
+                "ok": False, "error": "The server isn't set up yet: missing " + ", ".join(config.missing()) + ".",
+            })
+        client = auth.client_key(self.client_ip())
         if auth.locked_out(client):
             return self.send_json(429, {"ok": False, "error": "Too many attempts. Try again in 15 minutes."})
         payload = self.read_json(MAX_BODY_BYTES)
         if payload is None:
             return
-        username = payload.get("username", "")
+        email = payload.get("email", "")
         password = payload.get("password", "")
-        if not isinstance(username, str) or not isinstance(password, str) or len(password) > 1024:
-            return self.send_json(400, {"ok": False, "error": "Enter your username and password."})
-        if not auth.has_admins():
-            return self.send_json(503, {
-                "ok": False,
-                "error": "No admin accounts yet. Run: python3 server/app.py add-admin <name>",
-            })
-        user = auth.check_password(username.strip(), password)
-        if not user:
+        if not isinstance(email, str) or not isinstance(password, str) or not email or not password or len(password) > 1024:
+            return self.send_json(400, {"ok": False, "error": "Enter your email and password."})
+        admin = auth.check_password(email, password)
+        if not admin:
             auth.record_failure(client)
-            return self.send_json(401, {"ok": False, "error": "Wrong username or password."})
+            return self.send_json(401, {"ok": False, "error": "Wrong email or password."})
         auth.clear_failures(client)
-        token = auth.create_session(user)
+        token = auth.create_session(admin)
         self.send_json(200, {"ok": True}, cookie=self.session_cookie(token, auth.SESSION_SECONDS))
 
     # ---------- admin API ----------
@@ -240,12 +243,16 @@ class Handler(BaseHTTPRequestHandler):
         if not user:
             return self.send_json(401, {"ok": False, "error": "Please log in again."})
 
-        if method == "POST" and path == "/api/admin/uploads":
-            return self.upload()
-
         payload = self.read_json(MAX_ADMIN_BODY_BYTES)
         if payload is None:
             return
+
+        if method == "POST" and path == "/api/admin/uploads":
+            size = payload.get("size")
+            target, error = music.upload_target(str(payload.get("name", "")), size if isinstance(size, int) else None)
+            if error:
+                return self.send_json(400, {"ok": False, "error": error})
+            return self.send_json(201, {"ok": True, **target})
 
         track_match = re.fullmatch(r"/api/admin/tracks/([\w-]+)(/move)?", path)
         if method == "POST" and path == "/api/admin/tracks":
@@ -280,6 +287,13 @@ class Handler(BaseHTTPRequestHandler):
         if method == "POST" and path in ("/api/admin/campaigns", "/api/admin/campaigns/test"):
             return self.campaign(payload, user, test=path.endswith("/test"))
 
+        send_match = re.fullmatch(r"/api/admin/campaigns/([\w-]+)/send", path)
+        if method == "POST" and send_match:
+            summary = mailer.send_batch(send_match.group(1))
+            if not summary:
+                return self.send_json(404, {"ok": False, "error": "That send is gone."})
+            return self.send_json(200, {"ok": True, "campaign": summary})
+
         self.send_json(404, {"ok": False, "error": "Not found"})
 
     def campaign(self, payload, user, test):
@@ -304,7 +318,7 @@ class Handler(BaseHTTPRequestHandler):
                 mailer.send_test(to, subject.strip(), body, track)
             except (OSError, mailer.smtplib.SMTPException) as error:
                 return self.send_json(502, {"ok": False, "error": f"The mail server refused it: {error}"})
-            where = "sent" if mailer.status()["mode"] == "smtp" else "saved to the outbox"
+            where = "sent" if mailer.mode() == "smtp" else "saved to the outbox"
             return self.send_json(200, {"ok": True, "message": f"Test {where} for {to}."})
 
         record, error = mailer.start_campaign(subject.strip(), body, track, user)
@@ -312,31 +326,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(400, {"ok": False, "error": error})
         self.send_json(202, {"ok": True, "campaign": record})
 
-    def upload(self):
-        name = parse_qs(urlsplit(self.path).query).get("name", [""])[0]
-        ext = Path(name).suffix.lower()
-        if ext not in UPLOAD_TYPES:
-            return self.send_json(400, {"ok": False, "error": "Upload a JPG, PNG or WebP image, or an MP3, M4A or WAV file."})
-        length = self.content_length()
-        if length is None or length == 0 or length > UPLOAD_TYPES[ext]:
-            limit = UPLOAD_TYPES[ext] // 1_000_000
-            return self.send_json(400, {"ok": False, "error": f"Files of this type can be up to {limit} MB."})
-        MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-        target = MEDIA_DIR / f"{secrets.token_hex(8)}{'.jpg' if ext == '.jpeg' else ext}"
-        remaining = length
-        with target.open("wb") as out:
-            while remaining:
-                chunk = self.rfile.read(min(remaining, 1 << 16))
-                if not chunk:
-                    break
-                out.write(chunk)
-                remaining -= len(chunk)
-        if remaining:
-            target.unlink(missing_ok=True)
-            return self.send_json(400, {"ok": False, "error": "The upload was cut off. Try again."})
-        self.send_json(201, {"ok": True, "url": f"/media/{target.name}"})
-
     # ---------- helpers ----------
+
+    def client_ip(self):
+        if config.ON_VERCEL:
+            # Vercel sets this to the visitor's address; it can't be spoofed there.
+            forwarded = self.headers.get("X-Forwarded-For", "")
+            if forwarded:
+                return forwarded.split(",")[0].strip()
+        return self.client_address[0]
 
     def session_token(self):
         cookie = SimpleCookie(self.headers.get("Cookie", ""))
@@ -346,13 +344,14 @@ class Handler(BaseHTTPRequestHandler):
         return auth.session_user(self.session_token())
 
     def session_cookie(self, token, max_age):
-        flags = "; Secure" if SECURE_COOKIE else ""
+        flags = "; Secure" if config.COOKIE_SECURE else ""
         return f"{SESSION_COOKIE}={token}; Path=/; Max-Age={max_age}; HttpOnly; SameSite=Strict{flags}"
 
     def same_origin(self):
         """Browsers send Origin on every POST/PUT/DELETE; it must be this site."""
         origin = self.headers.get("Origin", "")
-        host = self.headers.get("Host", "")
+        host = self.headers.get("X-Forwarded-Host") if config.ON_VERCEL else None
+        host = host or self.headers.get("Host", "")
         return bool(host) and origin in (f"http://{host}", f"https://{host}")
 
     def content_length(self):
@@ -415,7 +414,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
-        # Design files are re-read on every request, so never serve a stale copy.
+        # Pages are rebuilt on every request (design files, catalog), so never cache.
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         for key, value in (extra or {}).items():
@@ -429,29 +428,32 @@ def _attr(value):
 
 
 def manage_admins(command, args):
-    if command == "list-admins":
-        names = auth.usernames()
-        print("\n".join(names) if names else "No admin accounts yet.")
-        return 0
-    if len(args) != 1 or not re.fullmatch(r"[\w.@-]{2,64}", args[0]):
-        print(f"Usage: python3 server/app.py {command} <username>")
-        return 2
-    username = args[0]
-    if command == "remove-admin":
-        if auth.remove_admin(username):
-            print(f"Removed {username}.")
-            return 0
-        print(f"There is no admin called {username}.")
+    if config.missing():
+        print("Set these first (in .env.local or the environment): " + ", ".join(config.missing()))
         return 1
-    password = getpass.getpass(f"Password for {username}: ")
+    if command == "list-admins":
+        rows = auth.admins()
+        print("\n".join(r["email"] for r in rows) if rows else "No admin accounts yet.")
+        return 0
+    if len(args) != 1 or not subscribers.valid_email(args[0]):
+        print(f"Usage: python3 server/app.py {command} <email>")
+        return 2
+    email = args[0]
+    if command == "remove-admin":
+        if auth.remove_admin(email):
+            print(f"{email} can no longer use /admin.")
+            return 0
+        print(f"{email} isn't an admin.")
+        return 1
+    password = getpass.getpass(f"Password for {email}: ")
     if len(password) < auth.MIN_PASSWORD_LENGTH:
         print(f"Use at least {auth.MIN_PASSWORD_LENGTH} characters.")
         return 1
     if getpass.getpass("Type it again: ") != password:
         print("The passwords didn't match.")
         return 1
-    auth.set_admin(username, password)
-    print(f"Saved {username}. Log in at /login.")
+    auth.set_admin(email, password)
+    print(f"Saved {email}. Log in at /login.")
     return 0
 
 
@@ -459,17 +461,20 @@ def main():
     if len(sys.argv) > 1:
         command = sys.argv[1]
         if command in ("add-admin", "remove-admin", "list-admins"):
-            sys.exit(manage_admins(command, sys.argv[2:]))
+            try:
+                sys.exit(manage_admins(command, sys.argv[2:]))
+            except db.DatabaseError as error:
+                print(f"Supabase said: {error}")
+                sys.exit(1)
         print(__doc__)
         sys.exit(2)
 
-    mailer.mark_interrupted()
-    port = int(os.environ.get("PORT", "8000"))
+    port = int(config.get("PORT", "8000"))
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print(f"Serving the site at http://127.0.0.1:{port}  (Ctrl+C to stop)")
-    if not auth.has_admins():
-        print("No admin accounts yet. Create one with: python3 server/app.py add-admin <name>")
-    print(f"Newsletter mail: {mailer.status()['mode']}")
+    if config.missing():
+        print("Not connected to Supabase yet. Missing: " + ", ".join(config.missing()) + " (see README).")
+    print(f"Newsletter mail: {mailer.mode()}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -2,7 +2,7 @@
 // Everything user-supplied is put on the page with textContent, never innerHTML.
 
 (function () {
-  var state = { tracks: [], subscribers: [], campaigns: [], editing: null, pollTimer: null };
+  var state = { tracks: [], subscribers: [], campaigns: [], editing: null, sendingId: null };
 
   function $(id) { return document.getElementById(id); }
 
@@ -89,7 +89,12 @@
       $('who').textContent = 'Signed in as ' + data.username;
       var notice = $('mail-notice');
       notice.textContent = '';
-      if (data.mail.mode === 'outbox') {
+      if (data.mail.mode === 'off') {
+        notice.appendChild(el('strong', { text: 'Email isn’t connected yet. ' }));
+        notice.appendChild(document.createTextNode(
+          'Add your email provider’s SMTP settings to the Vercel project (see the README) to send letters.'));
+        notice.hidden = false;
+      } else if (data.mail.mode === 'outbox') {
         notice.appendChild(el('strong', { text: 'Email isn’t connected yet. ' }));
         notice.appendChild(document.createTextNode(
           'Letters are saved as files in ' + data.mail.outbox + ' instead of being sent. ' +
@@ -132,7 +137,7 @@
     }
     state.campaigns.forEach(function (c) {
       var progress = c.status === 'sending'
-        ? c.sent + ' of ' + c.recipients + ' so far'
+        ? c.sent + ' of ' + c.recipients + ' so far. Keep this page open until it finishes.'
         : c.sent + ' of ' + c.recipients + ' delivered' + (c.failed ? ', ' + c.failed + ' failed' : '');
       if (c.mode === 'outbox') progress += ' (saved to outbox)';
       var meta = el('p', { class: 'campaign-meta', text: formatDate(c.created_at) + ' · ' + c.sent_by });
@@ -155,9 +160,28 @@
     });
     renderSubscriberCount();
 
-    var sending = state.campaigns.some(function (c) { return c.status === 'sending'; });
-    clearTimeout(state.pollTimer);
-    if (sending) state.pollTimer = setTimeout(loadCampaigns, 2000);
+    var sending = state.campaigns.filter(function (c) { return c.status === 'sending'; })[0];
+    if (sending) sendNextBatch(sending.id);
+  }
+
+  // Sends go out a batch at a time while this page is open. If it's closed
+  // part-way, the send carries on from where it stopped the next time an
+  // admin opens this page.
+  function sendNextBatch(id) {
+    if (state.sendingId) return;
+    state.sendingId = id;
+    api('POST', '/api/admin/campaigns/' + encodeURIComponent(id) + '/send', {})
+      .then(function (data) {
+        state.campaigns = state.campaigns.map(function (c) { return c.id === id ? data.campaign : c; });
+      })
+      .catch(function (error) {
+        setStatus($('compose-status'), error.message + ' Retrying in 10 seconds…', 'error');
+        return new Promise(function (resolve) { setTimeout(resolve, 10000); });
+      })
+      .then(function () {
+        state.sendingId = null;
+        renderCampaigns();
+      });
   }
 
   function loadCampaigns() {
@@ -313,14 +337,26 @@
     var status = $('track-status');
     setStatus(status, 'Uploading ' + file.name + '…');
     $('track-save').disabled = true;
-    fetch('/api/admin/uploads?name=' + encodeURIComponent(file.name), {
-      method: 'POST',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      body: file
-    })
-      .then(handle)
+    // The server hands out a one-time upload URL; the file goes straight to
+    // Supabase Storage, so large audio files never pass through the server.
+    var publicUrl;
+    api('POST', '/api/admin/uploads', { name: file.name, size: file.size })
       .then(function (data) {
-        target.value = data.url;
+        publicUrl = data.url;
+        return fetch(data.upload_url, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type || 'application/octet-stream' },
+          body: file
+        });
+      })
+      .then(function (response) {
+        if (response.ok) return;
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          throw new Error('Upload failed: ' + (data.message || data.error || response.status));
+        });
+      })
+      .then(function () {
+        target.value = publicUrl;
         setStatus(status, 'Uploaded ' + file.name + '.', 'ok');
         if (after) after();
       })

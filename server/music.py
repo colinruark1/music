@@ -1,26 +1,30 @@
-"""The Music catalog the admin manages, stored in server/data/music.json.
+"""The Music catalog the admin manages, stored in the Supabase `tracks` table.
 
-Until an admin saves a change, the catalog is the set of cards in the
-design's Music.dc.html and the pages render exactly as designed. After that,
-the cards in each page's Music grid are rebuilt from music.json.
+The cards in each page's Music grid are rebuilt from the table. If Supabase
+can't be reached, the page falls back to the cards in the design.
 """
 
 import html
 import re
 import secrets
+import sys
+from pathlib import Path
 
-from pages import render_page
-from store import LOCK, exists, read_json, write_json
+import db
 
-FILE = "music.json"
 DEFAULT_LINK_LABEL = "Stream / Download"
+MEDIA_BUCKET = "media"
+UPLOAD_TYPES = {
+    ".jpg": 10_000_000, ".jpeg": 10_000_000, ".png": 10_000_000, ".webp": 10_000_000,
+    ".mp3": 60_000_000, ".m4a": 60_000_000, ".wav": 60_000_000,
+}
 
-_ARTICLE_RE = re.compile(r"<article\b.*?</article>", re.S)
 _GRID_RE = re.compile(
     r'(<section id="music".*?<div style="display: grid[^>]*>)(.*?)(\n</div>\n</section>)', re.S
 )
 # Only plain web links and files this site serves; never javascript: and friends.
-_SAFE_URL_RE = re.compile(r"^(https?://[^\s\"'<>]+|/(media|assets)/[\w.\-]+|#[\w\-]*)$")
+_SAFE_URL_RE = re.compile(r"^(https?://[^\s\"'<>]+|/assets/[\w.\-]+|#[\w\-]*)$")
+_FIELDS = "id,position,title,cover,cover_alt,link,link_label"
 
 _CARD = """
 <article style="display: flex; flex-direction: column; gap: 12px">
@@ -35,29 +39,13 @@ def safe_url(url):
     return isinstance(url, str) and bool(_SAFE_URL_RE.match(url.strip()))
 
 
-def _design_tracks():
-    page = render_page("Music.dc.html")
-    grid = _GRID_RE.search(page)
-    tracks = []
-    for index, article in enumerate(_ARTICLE_RE.findall(grid.group(2) if grid else "")):
-        img = re.search(r'<img src="([^"]*)" alt="([^"]*)"', article)
-        title = re.search(r"<div[^>]*>(.*?)</div>", article, re.S)
-        link = re.search(r'<a href="([^"]*)"[^>]*>(.*?)</a>', article, re.S)
-        tracks.append(
-            {
-                "id": f"design-{index + 1}",
-                "title": html.unescape(title.group(1).strip()) if title else "",
-                "cover": html.unescape(img.group(1)) if img else "",
-                "cover_alt": html.unescape(img.group(2)) if img else "",
-                "link": html.unescape(link.group(1)) if link else "#music",
-                "link_label": html.unescape(link.group(2).strip()) if link else DEFAULT_LINK_LABEL,
-            }
-        )
-    return tracks
-
-
 def load():
-    return read_json(FILE, None) if exists(FILE) else _design_tracks()
+    return db.select("tracks", select=_FIELDS, order="position.asc,created_at.desc")
+
+
+def find(track_id):
+    rows = db.select("tracks", select=_FIELDS, id=db.eq(track_id))
+    return rows[0] if rows else None
 
 
 def clean(data):
@@ -81,49 +69,47 @@ def clean(data):
 
 
 def add(fields):
-    with LOCK:
-        tracks = load()
-        track = {"id": secrets.token_hex(6), **fields}
-        tracks.insert(0, track)
-        write_json(FILE, tracks)
-        return track
+    """New tracks go to the top of the list."""
+    first = db.select("tracks", select="position", order="position.asc", limit=1)
+    position = (first[0]["position"] - 1) if first else 0
+    return db.insert("tracks", {**fields, "position": position})[0]
 
 
 def update(track_id, fields):
-    with LOCK:
-        tracks = load()
-        for track in tracks:
-            if track["id"] == track_id:
-                track.update(fields)
-                write_json(FILE, tracks)
-                return track
-        return None
+    rows = db.update("tracks", fields, id=db.eq(track_id))
+    return rows[0] if rows else None
 
 
 def delete(track_id):
-    with LOCK:
-        tracks = load()
-        kept = [t for t in tracks if t["id"] != track_id]
-        if len(kept) == len(tracks):
-            return False
-        write_json(FILE, kept)
-        return True
+    return bool(db.delete("tracks", id=db.eq(track_id)))
 
 
 def move(track_id, offset):
-    with LOCK:
-        tracks = load()
-        index = next((i for i, t in enumerate(tracks) if t["id"] == track_id), None)
-        if index is None:
-            return False
-        target = max(0, min(len(tracks) - 1, index + offset))
-        tracks.insert(target, tracks.pop(index))
-        write_json(FILE, tracks)
-        return True
+    tracks = load()
+    index = next((i for i, t in enumerate(tracks) if t["id"] == track_id), None)
+    if index is None:
+        return False
+    target = max(0, min(len(tracks) - 1, index + offset))
+    tracks.insert(target, tracks.pop(index))
+    # Renumber, and only write the rows whose position changed.
+    for position, track in enumerate(tracks):
+        if track["position"] != position:
+            db.update("tracks", {"position": position}, id=db.eq(track["id"]))
+    return True
 
 
-def find(track_id):
-    return next((t for t in load() if t["id"] == track_id), None)
+def upload_target(name, size):
+    """Where the browser should upload a file. Returns (urls, error)."""
+    ext = Path(name).suffix.lower()
+    if ext not in UPLOAD_TYPES:
+        return None, "Upload a JPG, PNG or WebP image, or an MP3, M4A or WAV file."
+    if not isinstance(size, int) or size <= 0 or size > UPLOAD_TYPES[ext]:
+        return None, f"Files of this type can be up to {UPLOAD_TYPES[ext] // 1_000_000} MB."
+    path = f"{secrets.token_hex(8)}{'.jpg' if ext == '.jpeg' else ext}"
+    return {
+        "upload_url": db.signed_upload_url(MEDIA_BUCKET, path),
+        "url": db.public_url(MEDIA_BUCKET, path),
+    }, None
 
 
 def render_cards(tracks):
@@ -144,13 +130,16 @@ def render_cards(tracks):
 
 
 def apply_catalog(page, limit=None):
-    """Swap the page's Music grid for the saved catalog, if there is one."""
-    if not exists(FILE):
-        return page
+    """Swap the page's Music grid for the catalog in Supabase."""
     grid = _GRID_RE.search(page)
     if not grid:
         return page
-    tracks = load()[:limit] if limit else load()
+    try:
+        tracks = load()
+    except db.DatabaseError as error:
+        print(f"Music catalog unavailable, showing the design's cards: {error}", file=sys.stderr)
+        return page
+    tracks = tracks[:limit] if limit else tracks
     cards = render_cards(tracks) + "\n" if tracks else (
         '\n<p style="margin: 0; color: #C3C9CA">New music is on the way.</p>\n'
     )

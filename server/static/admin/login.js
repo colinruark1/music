@@ -2,14 +2,14 @@
   var form = document.getElementById('login-form');
   var status = document.getElementById('login-status');
   var button = form.querySelector('button');
-  document.getElementById('username').focus();
+  document.getElementById('email').focus();
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();
-    var username = form.username.value.trim();
+    var email = form.email.value.trim();
     var password = form.password.value;
-    if (!username || !password) {
-      status.textContent = 'Enter your username and password.';
+    if (!email || !password) {
+      status.textContent = 'Enter your email and password.';
       return;
     }
     button.disabled = true;
@@ -17,7 +17,7 @@
     fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: username, password: password })
+      body: JSON.stringify({ email: email, password: password })
     })
       .then(function (response) {
         return response.json().then(function (data) {

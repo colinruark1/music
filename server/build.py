@@ -1,33 +1,26 @@
-"""Render the site to static files in public/, for hosts like Vercel.
+"""Copy the site's images and scripts into public/ for Vercel.
 
     python3 server/build.py
 
-Writes public/index.html, public/music.html, ... plus the assets and
-site.js. Vercel serves them with clean URLs (/music -> music.html; see
-vercel.json). Only the public pages are built: sign-ups, /login and /admin
-need the Python server and don't work on a static host.
+Vercel serves public/ as plain files (/assets/..., /static/...). Pages are
+not built here: they come from the Python function in api/index.py, so the
+Music grid always shows the current catalog. A page file in public/ would
+be served instead of the function, so this script never writes one.
 """
 
 import shutil
 from pathlib import Path
 
-from app import PAGES, STATIC_DIR
-from pages import ASSETS_DIR, ROOT, render_page
-
+ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "public"
 
 
 def main():
     if OUT_DIR.exists():
         shutil.rmtree(OUT_DIR)
-    OUT_DIR.mkdir()
-    for path, source in PAGES.items():
-        name = "index.html" if path == "/" else f"{path.strip('/')}.html"
-        (OUT_DIR / name).write_text(render_page(source), encoding="utf-8")
-        print(f"{path:<12} -> public/{name}")
-    shutil.copytree(ASSETS_DIR, OUT_DIR / "assets", ignore=shutil.ignore_patterns("manifest.json"))
-    (OUT_DIR / "static").mkdir()
-    shutil.copy2(STATIC_DIR / "site.js", OUT_DIR / "static" / "site.js")
+    shutil.copytree(ROOT / "design" / "assets", OUT_DIR / "assets", ignore=shutil.ignore_patterns("manifest.json"))
+    shutil.copytree(ROOT / "server" / "static", OUT_DIR / "static")
+    print("Copied design/assets/ and server/static/ into public/")
 
 
 if __name__ == "__main__":

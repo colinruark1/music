@@ -7,77 +7,79 @@ Configured with environment variables:
     MAIL_FROM ("Megan Faith <hello@example.com>"),
     SITE_URL (the public address of the site, used for links and images).
 
-Without SMTP_HOST, nothing is sent: each email is written to
-server/data/outbox/<send id>/ as an .eml file you can open in a mail app.
+Without SMTP_HOST, a local server writes each email to
+server/data/outbox/<send id>/ as an .eml file instead of sending it. On
+Vercel there's no disk to write to, so sending needs SMTP.
+
+Sends go out in batches: the admin page calls send_batch() repeatedly until
+everyone has been sent to, so no single request runs long enough to time out.
 """
 
 import hashlib
 import hmac
 import html
-import os
 import re
-import secrets
 import smtplib
 import ssl
-import threading
 import time
-from datetime import datetime, timezone
 from email import policy
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid, parseaddr
 from urllib.parse import urlencode
 
-import subscribers
-from store import DATA_DIR, LOCK, read_json, write_json
+import config
+import db
 
-CAMPAIGNS_FILE = "campaigns.json"
-SECRET_FILE = DATA_DIR / "secret.key"
-OUTBOX_DIR = DATA_DIR / "outbox"
+OUTBOX_DIR = config.DATA_DIR / "outbox"
 ARTIST = "Megan Faith"
+BATCH_SIZE = 20
 SEND_DELAY_SECONDS = 0.2  # stay well under typical SMTP rate limits
 
 # Long unsubscribe URLs must stay on one header line, not get MIME-encoded.
 _POLICY = policy.SMTP.clone(max_line_length=998)
 _URL_RE = re.compile(r"https?://[^\s<>\"]+")
+_SUMMARY_FIELDS = (
+    "id,subject,track_title,sent_by,mode,status,created_at,finished_at,recipients,sent,failed,remaining,errors"
+)
 
 
 def settings():
-    port = os.environ.get("PORT", "8000")
+    port = config.get("PORT", "8000")
+    vercel_host = config.get("VERCEL_PROJECT_PRODUCTION_URL")
+    default_site = f"https://{vercel_host}" if vercel_host else f"http://127.0.0.1:{port}"
     return {
-        "host": os.environ.get("SMTP_HOST", ""),
-        "port": int(os.environ.get("SMTP_PORT", "587")),
-        "username": os.environ.get("SMTP_USERNAME", ""),
-        "password": os.environ.get("SMTP_PASSWORD", ""),
-        "security": os.environ.get("SMTP_SECURITY", "starttls").lower(),
-        "from": os.environ.get("MAIL_FROM", f"{ARTIST} <newsletter@localhost>"),
-        "site_url": os.environ.get("SITE_URL", f"http://127.0.0.1:{port}").rstrip("/"),
+        "host": config.get("SMTP_HOST"),
+        "port": int(config.get("SMTP_PORT", "587")),
+        "username": config.get("SMTP_USERNAME"),
+        "password": config.get("SMTP_PASSWORD"),
+        "security": config.get("SMTP_SECURITY", "starttls").lower(),
+        "from": config.get("MAIL_FROM", f"{ARTIST} <newsletter@localhost>"),
+        "site_url": config.get("SITE_URL", default_site).rstrip("/"),
     }
+
+
+def mode():
+    """'smtp' sends for real, 'outbox' writes files locally, 'off' can't send."""
+    if settings()["host"]:
+        return "smtp"
+    return "off" if config.ON_VERCEL else "outbox"
 
 
 def status():
-    config = settings()
-    return {
-        "mode": "smtp" if config["host"] else "outbox",
-        "from": config["from"],
-        "site_url": config["site_url"],
-        "outbox": str(OUTBOX_DIR),
-    }
+    current = settings()
+    return {"mode": mode(), "from": current["from"], "site_url": current["site_url"], "outbox": str(OUTBOX_DIR)}
 
 
-def _secret():
-    with LOCK:
-        if not SECRET_FILE.exists():
-            DATA_DIR.mkdir(exist_ok=True)
-            SECRET_FILE.write_text(secrets.token_hex(32), encoding="utf-8")
-            SECRET_FILE.chmod(0o600)
-        return bytes.fromhex(SECRET_FILE.read_text(encoding="utf-8").strip())
-
+# ---------- unsubscribe links ----------
 
 def unsubscribe_token(email):
-    return hmac.new(_secret(), email.lower().encode("utf-8"), hashlib.sha256).hexdigest()
+    message = f"unsubscribe:{email.lower()}".encode("utf-8")
+    return hmac.new(config.SESSION_SECRET.encode("utf-8"), message, hashlib.sha256).hexdigest()
 
 
 def check_unsubscribe_token(email, token):
+    if not config.SESSION_SECRET or not email:
+        return False
     return hmac.compare_digest(unsubscribe_token(email), token or "")
 
 
@@ -85,6 +87,8 @@ def unsubscribe_url(email):
     query = urlencode({"email": email, "token": unsubscribe_token(email)})
     return f"{settings()['site_url']}/unsubscribe?{query}"
 
+
+# ---------- building an email ----------
 
 def _absolute(url, site_url):
     return url if url.startswith("http") else site_url + url
@@ -104,8 +108,8 @@ def _body_html(text):
 
 
 def build_message(to, subject, body, track=None):
-    config = settings()
-    site = config["site_url"]
+    current = settings()
+    site = current["site_url"]
     unsubscribe = unsubscribe_url(to)
 
     text = body.strip() + "\n"
@@ -128,10 +132,10 @@ def build_message(to, subject, body, track=None):
 
     message = EmailMessage(policy=_POLICY)
     message["Subject"] = subject
-    message["From"] = config["from"]
+    message["From"] = current["from"]
     message["To"] = to
     message["Date"] = formatdate(localtime=True)
-    domain = parseaddr(config["from"])[1].rpartition("@")[2] or None
+    domain = parseaddr(current["from"])[1].rpartition("@")[2] or None
     message["Message-ID"] = make_msgid(domain=domain)
     message["List-Unsubscribe"] = f"<{unsubscribe}>"
     message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
@@ -152,20 +156,23 @@ def build_message(to, subject, body, track=None):
     return message
 
 
+# ---------- delivery ----------
+
 class _Sender:
-    """One SMTP connection reused across a send, or an outbox folder."""
+    """One SMTP connection reused across a batch, or a local outbox folder."""
 
     def __init__(self, outbox_name):
         self.config = settings()
+        self.mode = mode()
         self.outbox = OUTBOX_DIR / outbox_name
         self.smtp = None
 
     def _connect(self):
         c = self.config
         if c["security"] == "ssl":
-            smtp = smtplib.SMTP_SSL(c["host"], c["port"], timeout=30, context=ssl.create_default_context())
+            smtp = smtplib.SMTP_SSL(c["host"], c["port"], timeout=20, context=ssl.create_default_context())
         else:
-            smtp = smtplib.SMTP(c["host"], c["port"], timeout=30)
+            smtp = smtplib.SMTP(c["host"], c["port"], timeout=20)
             if c["security"] == "starttls":
                 smtp.starttls(context=ssl.create_default_context())
         if c["username"]:
@@ -173,11 +180,13 @@ class _Sender:
         return smtp
 
     def send(self, message):
-        if not self.config["host"]:
+        if self.mode == "outbox":
             self.outbox.mkdir(parents=True, exist_ok=True)
             name = re.sub(r"[^\w.@-]", "_", message["To"]) + ".eml"
             (self.outbox / name).write_bytes(bytes(message))
             return
+        if self.mode == "off":
+            raise smtplib.SMTPException("No email provider is connected (set SMTP_HOST).")
         try:
             self.smtp = self.smtp or self._connect()
             self.smtp.send_message(message)
@@ -201,86 +210,68 @@ def send_test(to, subject, body, track=None):
         sender.close()
 
 
+# ---------- sends ----------
+
 def campaigns():
-    return read_json(CAMPAIGNS_FILE, [])
+    return db.select("campaign_summary", select=_SUMMARY_FIELDS, order="created_at.desc", limit=50)
 
 
-def _update_campaign(campaign_id, **changes):
-    with LOCK:
-        records = campaigns()
-        for record in records:
-            if record["id"] == campaign_id:
-                record.update(changes)
-        write_json(CAMPAIGNS_FILE, records)
-
-
-def mark_interrupted():
-    """Sends that were running when the server last stopped didn't finish."""
-    with LOCK:
-        records = campaigns()
-        if any(r["status"] == "sending" for r in records):
-            for record in records:
-                if record["status"] == "sending":
-                    record["status"] = "interrupted"
-            write_json(CAMPAIGNS_FILE, records)
+def campaign(campaign_id):
+    rows = db.select("campaign_summary", select=_SUMMARY_FIELDS, id=db.eq(campaign_id))
+    return rows[0] if rows else None
 
 
 def start_campaign(subject, body, track, sent_by):
-    """Queue a send to every subscriber. Returns (record, error)."""
-    recipients = [s["email"] for s in subscribers.load()]
-    if not recipients:
-        return None, "Nobody has signed up yet."
-    with LOCK:
-        records = campaigns()
-        if any(r["status"] == "sending" for r in records):
-            return None, "Another email is still sending. Wait for it to finish."
-        record = {
-            "id": datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(3),
-            "subject": subject,
-            "body": body,
-            "track_id": track["id"] if track else None,
-            "track_title": track["title"] if track else None,
-            "sent_by": sent_by,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "mode": status()["mode"],
-            "status": "sending",
-            "recipients": len(recipients),
-            "sent": 0,
-            "failed": 0,
-            "errors": [],
-        }
-        records.insert(0, record)
-        write_json(CAMPAIGNS_FILE, records)
-
-    threading.Thread(
-        target=_run_campaign, args=(record, recipients, track), daemon=True
-    ).start()
-    return record, None
-
-
-def _run_campaign(record, recipients, track):
-    sender = _Sender(record["id"])
-    sent, failed, errors = 0, 0, []
+    """Queue a send to every subscriber. Returns (summary, error)."""
+    if mode() == "off":
+        return None, "Connect an email provider first (see the README: SMTP settings)."
+    snapshot = None
+    if track:
+        snapshot = {k: track[k] for k in ("id", "title", "cover", "cover_alt", "link", "link_label")}
     try:
-        for index, email in enumerate(recipients):
+        campaign_id = db.rpc(
+            "start_campaign",
+            p_subject=subject, p_body=body, p_track=snapshot, p_sent_by=sent_by, p_mode=mode(),
+        )
+    except db.DatabaseError as error:
+        if error.status == 409 or "campaigns_one_sending" in str(error):
+            return None, "Another email is still sending. Wait for it to finish."
+        if error.status == 400:  # the function's own messages (nobody signed up, etc.)
+            return None, str(error)
+        raise
+    return campaign(campaign_id), None
+
+
+def send_batch(campaign_id):
+    """Send to the next batch of recipients. Returns the updated summary."""
+    rows = db.select("campaigns", select="id,subject,body,track,status", id=db.eq(campaign_id))
+    if not rows:
+        return None
+    record = rows[0]
+    if record["status"] != "sending":
+        return campaign(campaign_id)
+
+    claimed = db.rpc("claim_deliveries", p_campaign=campaign_id, p_limit=BATCH_SIZE) or []
+    sender = _Sender(campaign_id)
+    try:
+        for index, delivery in enumerate(claimed):
+            email = delivery["email"]
             try:
-                sender.send(build_message(email, record["subject"], record["body"], track))
-                sent += 1
+                sender.send(build_message(email, record["subject"], record["body"], record["track"]))
+                result = {"status": "sent", "error": None}
             except (smtplib.SMTPException, OSError) as error:
-                failed += 1
-                if len(errors) < 20:
-                    errors.append(f"{email}: {error}")
-            if index % 10 == 9:
-                _update_campaign(record["id"], sent=sent, failed=failed, errors=errors)
-            if sender.config["host"]:
+                result = {"status": "failed", "error": str(error)[:300]}
+            db.update(
+                "deliveries",
+                {**result, "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+                campaign_id=db.eq(campaign_id),
+                email=db.eq(email),
+            )
+            if sender.mode == "smtp" and index < len(claimed) - 1:
                 time.sleep(SEND_DELAY_SECONDS)
     finally:
         sender.close()
-        _update_campaign(
-            record["id"],
-            sent=sent,
-            failed=failed,
-            errors=errors,
-            status="sent" if sent else "failed",
-            finished_at=datetime.now(timezone.utc).isoformat(),
-        )
+
+    if len(claimed) < BATCH_SIZE:
+        db.rpc("finish_campaign", p_campaign=campaign_id)
+    return campaign(campaign_id)

@@ -4,5 +4,14 @@
   "installCommand": "",
   "buildCommand": "python3 server/build.py",
   "outputDirectory": "public",
-  "cleanUrls": true
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{server,design}/**",
+      "excludeFiles": "server/data/**",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    { "source": "/((?!assets/|static/).*)", "destination": "/api/index" }
+  ]
 }

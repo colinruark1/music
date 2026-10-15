@@ -1,131 +1,125 @@
-"""Admin accounts and login sessions.
+"""Admin logins.
 
-Accounts live in server/data/admins.json as salted PBKDF2 hashes and are
-managed from the command line (see app.py). Sessions are kept in memory, so
-restarting the server signs everyone out.
+Passwords are checked by Supabase Auth, and the account must also be listed
+in the `admins` table. A successful login gets a signed session cookie, so
+sessions work across serverless instances. Removing someone from `admins`
+ends their session on the next request.
 """
 
+import base64
 import hashlib
 import hmac
-import secrets
-import threading
+import json
 import time
+from datetime import datetime, timedelta, timezone
 
-from store import LOCK, read_json, write_json
+import config
+import db
 
-FILE = "admins.json"
-ITERATIONS = 600_000
 MIN_PASSWORD_LENGTH = 10
 SESSION_SECONDS = 12 * 60 * 60
 MAX_FAILURES = 5
-FAILURE_WINDOW_SECONDS = 15 * 60
-
-_sessions = {}  # token -> (username, expires_at)
-_failures = {}  # client address -> [failure times]
-_state_lock = threading.Lock()
-# Hashed when the username is unknown, so a miss takes as long as a wrong password.
-_DUMMY = {"salt": secrets.token_hex(16), "hash": "", "iterations": ITERATIONS}
+FAILURE_WINDOW = timedelta(minutes=15)
 
 
-def _hash(password, salt, iterations):
-    return hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), bytes.fromhex(salt), iterations
-    ).hex()
+def _secret():
+    if not config.SESSION_SECRET:
+        raise db.DatabaseError("SESSION_SECRET isn't set.")
+    return config.SESSION_SECRET.encode("utf-8")
 
 
-def _admins():
-    return read_json(FILE, [])
+def _sign(data):
+    return hmac.new(_secret(), data, hashlib.sha256).digest()
 
 
-def has_admins():
-    return bool(_admins())
+def _b64(data):
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
-def usernames():
-    return [a["username"] for a in _admins()]
+def _unb64(text):
+    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
 
 
-def set_admin(username, password):
-    """Create the account, or reset its password if it exists."""
-    salt = secrets.token_hex(16)
-    record = {
-        "username": username,
-        "salt": salt,
-        "hash": _hash(password, salt, ITERATIONS),
-        "iterations": ITERATIONS,
-    }
-    with LOCK:
-        admins = [a for a in _admins() if a["username"].lower() != username.lower()]
-        admins.append(record)
-        write_json(FILE, admins)
+# ---------- accounts ----------
+
+def admins():
+    return db.select("admins", select="user_id,email", order="email.asc")
 
 
-def remove_admin(username):
-    with LOCK:
-        admins = _admins()
-        kept = [a for a in admins if a["username"].lower() != username.lower()]
-        if len(kept) == len(admins):
-            return False
-        write_json(FILE, kept)
-    with _state_lock:
-        for token, (user, _) in list(_sessions.items()):
-            if user.lower() == username.lower():
-                del _sessions[token]
-    return True
+def set_admin(email, password):
+    """Create the login (or reset its password) and allow it into /admin."""
+    email = email.strip().lower()
+    user = next((u for u in db.auth_users() if (u.get("email") or "").lower() == email), None)
+    if user:
+        db.set_auth_password(user["id"], password)
+    else:
+        user = db.create_auth_user(email, password)
+    db.insert("admins", {"user_id": user["id"], "email": email}, on_conflict="user_id", ignore_duplicates=True)
 
 
-def check_password(username, password):
-    """Return the account's username if the password matches, else None."""
-    admin = next(
-        (a for a in _admins() if a["username"].lower() == username.lower()), None
-    )
-    record = admin or _DUMMY
-    attempt = _hash(password, record["salt"], record["iterations"])
-    if admin and hmac.compare_digest(attempt, admin["hash"]):
-        return admin["username"]
-    return None
+def remove_admin(email):
+    """Take the account out of /admin. The Supabase Auth login is kept."""
+    return bool(db.delete("admins", email=db.eq(email.strip().lower())))
+
+
+def check_password(email, password):
+    """Return the admin's email if the password matches and they're an admin."""
+    user = db.sign_in(email.strip().lower(), password)
+    if not user:
+        return None
+    rows = db.select("admins", select="email", user_id=db.eq(user["id"]))
+    return {"id": user["id"], "email": rows[0]["email"]} if rows else None
+
+
+# ---------- lockout ----------
+
+def client_key(address):
+    """A keyed hash of the visitor's IP, so no addresses are stored."""
+    return hmac.new(_secret(), f"login:{address}".encode("utf-8"), hashlib.sha256).hexdigest()[:32]
 
 
 def locked_out(client):
-    now = time.time()
-    with _state_lock:
-        recent = [t for t in _failures.get(client, []) if now - t < FAILURE_WINDOW_SECONDS]
-        _failures[client] = recent
-        return len(recent) >= MAX_FAILURES
+    since = (datetime.now(timezone.utc) - FAILURE_WINDOW).isoformat()
+    recent = db.select(
+        "login_failures", select="id", client=db.eq(client), failed_at=f"gte.{since}", limit=MAX_FAILURES
+    )
+    return len(recent) >= MAX_FAILURES
 
 
 def record_failure(client):
-    with _state_lock:
-        _failures.setdefault(client, []).append(time.time())
+    db.insert("login_failures", {"client": client})
+    # Old rows serve no purpose; clear out anything over a day old.
+    db.delete("login_failures", failed_at=f"lt.{(datetime.now(timezone.utc) - timedelta(days=1)).isoformat()}")
 
 
 def clear_failures(client):
-    with _state_lock:
-        _failures.pop(client, None)
+    db.delete("login_failures", client=db.eq(client))
 
 
-def create_session(username):
-    token = secrets.token_urlsafe(32)
-    with _state_lock:
-        _sessions[token] = (username, time.time() + SESSION_SECONDS)
-    return token
+# ---------- sessions ----------
+
+def create_session(admin):
+    payload = json.dumps(
+        {"uid": admin["id"], "email": admin["email"], "exp": int(time.time()) + SESSION_SECONDS},
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return f"{_b64(payload)}.{_b64(_sign(payload))}"
 
 
 def session_user(token):
-    if not token:
+    """The signed-in admin's email, or None."""
+    if not token or "." not in token or not config.SESSION_SECRET:
         return None
-    with _state_lock:
-        entry = _sessions.get(token)
-        if not entry:
+    body, signature = token.split(".", 1)
+    try:
+        payload = _unb64(body)
+        if not hmac.compare_digest(_unb64(signature), _sign(payload)):
             return None
-        username, expires_at = entry
-        if time.time() > expires_at:
-            del _sessions[token]
-            return None
-    # An account removed from the command line loses its sessions too.
-    return username if username in usernames() else None
-
-
-def end_session(token):
-    with _state_lock:
-        _sessions.pop(token, None)
+        session = json.loads(payload)
+    except (ValueError, TypeError):
+        return None
+    if session.get("exp", 0) < time.time():
+        return None
+    # Still an admin? This is what makes remove-admin take effect right away.
+    rows = db.select("admins", select="email", user_id=db.eq(session.get("uid", "")))
+    return rows[0]["email"] if rows else None
