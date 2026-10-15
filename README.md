@@ -54,7 +54,7 @@ SESSION_SECRET=...
 3. **Add an admin.** With `.env.local` filled in:
 
    ```sh
-   python3 server/app.py add-admin megan@example.com   # asks for a password (10+ characters)
+   python3 server/app.py add-admin megan@example.com   # asks for a password (9+ characters)
    python3 server/app.py list-admins
    python3 server/app.py remove-admin megan@example.com
    ```

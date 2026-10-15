@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 import config
 import db
 
-MIN_PASSWORD_LENGTH = 10
+MIN_PASSWORD_LENGTH = 9
 SESSION_SECONDS = 12 * 60 * 60
 MAX_FAILURES = 5
 FAILURE_WINDOW = timedelta(minutes=15)
