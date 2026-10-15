@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin Login · Megan Faith</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Instrument+Serif:ital@0;1&amp;display=swap">
+<link rel="stylesheet" href="/static/admin/admin.css">
+</head>
+<body>
+<div class="login">
+  <div class="login-card">
+    <header>
+      <a class="brand" href="/">Megan Faith</a>
+      <h1>Admin</h1>
+      <p class="muted">Sign in to send letters and update the music.</p>
+    </header>
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit">Log in</button>
+      <p id="login-status" class="status error" role="status"></p>
+    </form>
+  </div>
+</div>
+<script src="/static/admin/login.js"></script>
+</body>
+</html>

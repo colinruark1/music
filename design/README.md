@@ -7,6 +7,8 @@ https://claude.ai/artifact/ApHp4eAAY2VBEBtvHWnq5f
 
 - `project/canvas.json` — canvas index: which artboards exist and where they sit.
 - `project/Main.dc.html` — website home page (fluid, 1360px wide on the canvas).
+- `project/Music.dc.html`, `Tour.dc.html`, `About.dc.html`, `Subscribe.dc.html` — one page per
+  nav link, each a copy of that landing-page section under a short photo banner.
 - `project/Player.dc.html` — phone "porch session" player (390×844).
 - `assets/` — images the artboards use.
 - `tools/grade.py` — the crop, colour grade and film grain applied to the photo.
@@ -42,6 +44,10 @@ The landing section uses `assets/ocean-fence-hero.jpg`, the same photo with
 the grain at 0.45 strength (pass the strength as a third argument). It is not
 on the canvas, so the home page points at it by file path (`/assets/...`),
 which only the local server resolves.
+
+The second, third and fourth song covers (`assets/cover-2-palms.jpg`,
+`cover-3-shore.jpg`, `cover-4-guitar.jpg`) are also loaded by file path and are
+not on the canvas yet.
 
 That also writes a `preview.jpg`, and it does not reproduce one manual step:
 the blue sign on the right was desaturated afterwards.

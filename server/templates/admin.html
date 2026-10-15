@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Megan Faith</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Instrument+Serif:ital@0;1&amp;display=swap">
+<link rel="stylesheet" href="/static/admin/admin.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/" target="_blank" rel="noopener">Megan Faith</a>
+    <nav class="tabs" role="tablist" aria-label="Admin sections">
+      <button role="tab" id="tab-newsletter" aria-controls="panel-newsletter" aria-selected="true">Newsletter</button>
+      <button role="tab" id="tab-music" aria-controls="panel-music" aria-selected="false">Music</button>
+      <button role="tab" id="tab-subscribers" aria-controls="panel-subscribers" aria-selected="false">Subscribers</button>
+    </nav>
+    <div class="who"><span id="who"></span><button id="logout" class="secondary small" type="button">Log out</button></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ Newsletter ============ -->
+<section id="panel-newsletter" role="tabpanel" aria-labelledby="tab-newsletter">
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Letters</p>
+      <h1>Newsletter</h1>
+    </div>
+    <div class="stats"><div class="stat"><strong id="subscriber-count">–</strong><span>subscribers</span></div></div>
+  </div>
+
+  <div id="mail-notice" class="notice" hidden></div>
+
+  <div class="grid-2">
+    <div>
+      <form id="compose" class="card" novalidate>
+        <h2>Write a letter</h2>
+        <div class="field">
+          <label for="subject">Subject</label>
+          <input id="subject" type="text" maxlength="200" required placeholder="New song out Friday">
+        </div>
+        <div class="field">
+          <label for="body">Message</label>
+          <textarea id="body" required placeholder="Hey friends,&#10;&#10;…"></textarea>
+          <p class="hint">Plain text. Leave a blank line between paragraphs. Links are clickable. An unsubscribe link is added to the bottom.</p>
+        </div>
+        <div class="field">
+          <label for="feature">Feature a track</label>
+          <select id="feature"><option value="">None</option></select>
+          <p class="hint">Adds the cover art and a listen link under your message.</p>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="test-to">Send a test to</label>
+            <input id="test-to" type="email" autocomplete="email" placeholder="you@example.com">
+          </div>
+          <button id="send-test" class="secondary" type="button">Send test</button>
+        </div>
+        <div class="row">
+          <button id="send-all" type="submit">Send to everyone</button>
+        </div>
+        <p id="compose-status" class="status" role="status"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Sent</h2>
+      <ul id="campaigns" class="list"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Music ============ -->
+<section id="panel-music" role="tabpanel" aria-labelledby="tab-music" hidden>
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Catalog</p>
+      <h1>Music</h1>
+    </div>
+    <p class="muted small">The first four show on the home page. All of them show on <a href="/music" target="_blank" rel="noopener">/music</a>.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>On the site</h2>
+      <ul id="tracks" class="list"></ul>
+    </div>
+
+    <form id="track-form" class="card" novalidate>
+      <h2 id="track-form-title">Add a track</h2>
+      <div class="field">
+        <label for="track-title">Title</label>
+        <input id="track-title" type="text" maxlength="120" required>
+      </div>
+      <div class="field">
+        <span class="label">Cover art</span>
+        <img id="cover-preview" class="cover-preview" alt="" hidden>
+        <div class="upload-row">
+          <input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload cover art">
+        </div>
+        <input id="track-cover" type="text" placeholder="/media/… or https://…" aria-label="Cover art link">
+        <p class="hint">Square images look best. JPG, PNG or WebP, up to 10 MB.</p>
+      </div>
+      <div class="field">
+        <label for="track-alt">Describe the cover</label>
+        <input id="track-alt" type="text" maxlength="300" placeholder="Megan on a porch with a guitar at sunset">
+        <p class="hint">Read aloud by screen readers.</p>
+      </div>
+      <div class="field">
+        <span class="label">Where it plays</span>
+        <div class="upload-row">
+          <input id="audio-file" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav" aria-label="Upload an audio file">
+        </div>
+        <input id="track-link" type="text" placeholder="https://open.spotify.com/… or upload a file" aria-label="Listen link">
+        <p class="hint">Paste a streaming link, or upload an MP3, M4A or WAV (up to 60 MB) for a direct download.</p>
+      </div>
+      <div class="field">
+        <label for="track-label">Button text</label>
+        <input id="track-label" type="text" maxlength="40" placeholder="Stream / Download">
+      </div>
+      <div class="row">
+        <button id="track-save" type="submit">Add track</button>
+        <button id="track-cancel" class="secondary" type="button" hidden>Cancel</button>
+      </div>
+      <p id="track-status" class="status" role="status"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ Subscribers ============ -->
+<section id="panel-subscribers" role="tabpanel" aria-labelledby="tab-subscribers" hidden>
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Mailing list</p>
+      <h1>Subscribers</h1>
+    </div>
+    <a class="button secondary" href="/api/admin/subscribers.csv" download>Export CSV</a>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label for="subscriber-search">Search</label>
+      <input id="subscriber-search" type="text" placeholder="Filter by email">
+    </div>
+    <ul id="subscribers" class="list"></ul>
+  </div>
+</section>
+
+</main>
+<script src="/static/admin/admin.js"></script>
+</body>
+</html>
