@@ -1,2 +1,4 @@
 server/data/
 __pycache__/
+public/
+.vercel/
