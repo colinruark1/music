@@ -12,7 +12,7 @@ from pathlib import Path
 
 import db
 
-DEFAULT_LINK_LABEL = "Stream / Download"
+DEFAULT_LINK_LABEL = "Stream"
 MEDIA_BUCKET = "media"
 UPLOAD_TYPES = {
     ".jpg": 10_000_000, ".jpeg": 10_000_000, ".png": 10_000_000, ".webp": 10_000_000,
@@ -24,19 +24,42 @@ _GRID_RE = re.compile(
 )
 # Only plain web links and files this site serves; never javascript: and friends.
 _SAFE_URL_RE = re.compile(r"^(https?://[^\s\"'<>]+|/assets/[\w.\-]+|#[\w\-]*)$")
-_FIELDS = "id,position,title,cover,cover_alt,link,link_label"
+_FIELDS = "id,position,title,cover,cover_alt,audio,link,link_label"
+_AUDIO_RE = re.compile(r"\.(mp3|m4a|wav)([?#].*)?$", re.I)
+
+_COVER = """<img src="{cover}" alt="{cover_alt}" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #546067; box-sizing: border-box; border: 6px solid #FAFAF7">"""
+
+# A track with audio gets a play button on its cover and a seek bar. site.js
+# plays it in one shared player; the page never links to the file itself.
+_PLAYABLE_COVER = """<div style="position: relative">
+{cover}
+<button type="button" data-audio="{audio}" aria-label="Play {title}" style="position: absolute; right: 18px; bottom: 18px; width: 64px; height: 64px; border: 0; border-radius: 50%; background: #E3B866; box-shadow: 0 4px 14px rgba(27, 36, 42, 0.45); display: flex; align-items: center; justify-content: center">
+<svg data-icon="play" aria-hidden="true" width="24" height="24" viewBox="0 0 26 26"><path d="M7 4v18l15-9z" fill="#1B242A"></path></svg>
+<svg data-icon="pause" aria-hidden="true" width="24" height="24" viewBox="0 0 26 26" style="display: none"><path d="M6 4h5v18H6zM15 4h5v18h-5z" fill="#1B242A"></path></svg>
+</button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<input data-seek type="range" min="0" max="1000" value="0" disabled aria-label="Position in {title}" style="flex: 1; min-width: 0; height: 32px; margin: 0; accent-color: #E3B866">
+<span data-time style="flex: none; font-size: 14px; color: #C3C9CA; font-variant-numeric: tabular-nums">0:00</span>
+</div>"""
+
+_LINK = """
+<a href="{link}"{target} style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">{link_label}</a>"""
 
 _CARD = """
 <article style="display: flex; flex-direction: column; gap: 12px">
-<img src="{cover}" alt="{cover_alt}" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 50%; background: #546067; box-sizing: border-box; border: 6px solid #FAFAF7">
-<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">{title}</div>
-<a href="{link}"{target} style="align-self: flex-start; padding: 10px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">{link_label}</a>
+{cover}
+<div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.1">{title}</div>{link}
 </article>
 """
 
 
 def safe_url(url):
     return isinstance(url, str) and bool(_SAFE_URL_RE.match(url.strip()))
+
+
+def is_audio_file(url):
+    return bool(_AUDIO_RE.search(url))
 
 
 def load():
@@ -54,7 +77,7 @@ def clean(data):
         return None, "Send the track as a JSON object."
     fields = {
         key: data.get(key, "").strip() if isinstance(data.get(key, ""), str) else ""
-        for key in ("title", "cover", "cover_alt", "link", "link_label")
+        for key in ("title", "cover", "cover_alt", "audio", "link", "link_label")
     }
     if not fields["title"]:
         return None, "Give the track a title."
@@ -62,8 +85,15 @@ def clean(data):
         return None, "One of the fields is too long."
     if not safe_url(fields["cover"]):
         return None, "Upload cover art, or paste an https:// image link."
-    if not safe_url(fields["link"]):
-        return None, "Upload an audio file, or paste an https:// streaming link."
+    if fields["audio"] and not (fields["audio"].startswith("https://") and safe_url(fields["audio"])):
+        return None, "Upload the song's audio file again."
+    if fields["link"] and not safe_url(fields["link"]):
+        return None, "The streaming link should start with https://."
+    # A link straight to an audio file would let visitors download the song.
+    if is_audio_file(fields["link"]):
+        return None, "That link is an audio file. Upload it under Audio so it plays on the page instead."
+    if not fields["audio"] and not fields["link"]:
+        return None, "Upload the song's audio, or paste a streaming link."
     fields["link_label"] = fields["link_label"] or DEFAULT_LINK_LABEL
     return fields, None
 
@@ -115,17 +145,20 @@ def upload_target(name, size):
 def render_cards(tracks):
     cards = []
     for track in tracks:
-        external = track["link"].startswith("http")
-        cards.append(
-            _CARD.format(
-                cover=html.escape(track["cover"]),
-                cover_alt=html.escape(track["cover_alt"]),
-                title=html.escape(track["title"]),
+        title = html.escape(track["title"])
+        cover = _COVER.format(cover=html.escape(track["cover"]), cover_alt=html.escape(track["cover_alt"]))
+        audio = track.get("audio") or ""
+        if audio:
+            cover = _PLAYABLE_COVER.format(cover=cover, audio=html.escape(audio), title=title)
+        link = ""
+        # Older rows may still point at an audio file; never show that as a link.
+        if track["link"] and not is_audio_file(track["link"]):
+            link = _LINK.format(
                 link=html.escape(track["link"]),
-                target=' target="_blank" rel="noopener"' if external else "",
+                target=' target="_blank" rel="noopener"' if track["link"].startswith("http") else "",
                 link_label=html.escape(track["link_label"]),
             )
-        )
+        cards.append(_CARD.format(cover=cover, title=title, link=link))
     return "".join(cards)
 
 

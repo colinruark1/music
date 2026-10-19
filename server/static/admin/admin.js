@@ -258,7 +258,7 @@
         cover,
         el('div', { class: 'grow' }, [
           el('h3', { class: 'truncate', text: track.title }),
-          el('p', { class: 'small muted truncate', text: track.link })
+          el('p', { class: 'small muted truncate', text: trackSummary(track) })
         ]),
         el('div', { class: 'actions' }, [
           el('button', { class: 'secondary small', type: 'button', 'aria-label': 'Move ' + track.title + ' up',
@@ -274,6 +274,19 @@
       if (index === 0) cover.setAttribute('loading', 'eager');
     });
     renderFeatureOptions();
+  }
+
+  function trackSummary(track) {
+    var parts = [];
+    if (track.audio) parts.push('▶ Plays on the site');
+    if (track.link) parts.push(track.link);
+    return parts.join(' · ');
+  }
+
+  function showAudio() {
+    var url = $('track-audio').value;
+    $('audio-name').textContent = url ? '▶ ' + decodeURIComponent(url.split('/').pop()) : 'No audio yet.';
+    $('audio-remove').hidden = !url;
   }
 
   function loadTracks() {
@@ -312,6 +325,7 @@
     $('track-title').value = track.title;
     $('track-cover').value = track.cover;
     $('track-alt').value = track.cover_alt;
+    $('track-audio').value = track.audio || '';
     $('track-link').value = track.link;
     $('track-label').value = track.link_label;
     $('track-form-title').textContent = 'Edit track';
@@ -319,16 +333,19 @@
     $('track-cancel').hidden = false;
     setStatus($('track-status'), '');
     showCoverPreview();
+    showAudio();
     $('track-title').focus();
   }
 
   function resetTrackForm() {
     state.editing = null;
     $('track-form').reset();
+    $('track-audio').value = '';
     $('track-form-title').textContent = 'Add a track';
     $('track-save').textContent = 'Add track';
     $('track-cancel').hidden = true;
     showCoverPreview();
+    showAudio();
   }
 
   function upload(fileInput, target, after) {
@@ -368,7 +385,9 @@
   }
 
   $('cover-file').addEventListener('change', function () { upload($('cover-file'), $('track-cover'), showCoverPreview); });
-  $('audio-file').addEventListener('change', function () { upload($('audio-file'), $('track-link')); });
+  $('audio-file').addEventListener('change', function () { upload($('audio-file'), $('track-audio'), showAudio); });
+  $('audio-remove').addEventListener('click', function () { $('track-audio').value = ''; showAudio(); });
+  showAudio();
   $('track-cover').addEventListener('change', showCoverPreview);
   $('track-cancel').addEventListener('click', function () { resetTrackForm(); setStatus($('track-status'), ''); });
 
@@ -379,6 +398,7 @@
       title: $('track-title').value.trim(),
       cover: $('track-cover').value.trim(),
       cover_alt: $('track-alt').value.trim(),
+      audio: $('track-audio').value.trim(),
       link: $('track-link').value.trim(),
       link_label: $('track-label').value.trim()
     };

@@ -111,16 +111,23 @@
         <p class="hint">Read aloud by screen readers.</p>
       </div>
       <div class="field">
-        <span class="label">Where it plays</span>
+        <span class="label">Audio</span>
         <div class="upload-row">
           <input id="audio-file" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav" aria-label="Upload an audio file">
+          <button id="audio-remove" class="secondary small" type="button" hidden>Remove audio</button>
         </div>
-        <input id="track-link" type="text" placeholder="https://open.spotify.com/… or upload a file" aria-label="Listen link">
-        <p class="hint">Paste a streaming link, or upload an MP3, M4A or WAV (up to 60 MB) for a direct download.</p>
+        <input id="track-audio" type="hidden">
+        <p id="audio-name" class="small muted truncate"></p>
+        <p class="hint">MP3, M4A or WAV, up to 60 MB. Plays on the site with a play button. Visitors get no download link.</p>
+      </div>
+      <div class="field">
+        <label for="track-link">Streaming link (optional)</label>
+        <input id="track-link" type="text" placeholder="https://open.spotify.com/…">
+        <p class="hint">Spotify, Apple Music, Bandcamp… Shows as a button under the song.</p>
       </div>
       <div class="field">
         <label for="track-label">Button text</label>
-        <input id="track-label" type="text" maxlength="40" placeholder="Stream / Download">
+        <input id="track-label" type="text" maxlength="40" placeholder="Stream">
       </div>
       <div class="row">
         <button id="track-save" type="submit">Add track</button>

@@ -115,8 +115,13 @@ def build_message(to, subject, body, track=None):
     text = body.strip() + "\n"
     track_html = ""
     if track:
-        link = _absolute(track["link"], site)
-        text += f"\n{track['title']}\n{track['link_label']}: {link}\n"
+        # Songs that only play on the site link to the Music page, never to
+        # the audio file itself.
+        if track["link"]:
+            link, label = _absolute(track["link"], site), track["link_label"]
+        else:
+            link, label = f"{site}/music", "Listen on the site"
+        text += f"\n{track['title']}\n{label}: {link}\n"
         track_html = (
             '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px">'
             f'<tr><td><a href="{html.escape(link)}"><img src="{html.escape(_absolute(track["cover"], site))}" '
@@ -126,7 +131,7 @@ def build_message(to, subject, body, track=None):
             f'{html.escape(track["title"])}</td></tr>'
             f'<tr><td style="padding-top:6px"><a href="{html.escape(link)}" style="color:#1B242A;'
             'font-family:\'Arial Narrow\',Arial,sans-serif;font-weight:bold;letter-spacing:.12em;'
-            f'text-transform:uppercase;font-size:14px">{html.escape(track["link_label"])}</a></td></tr></table>'
+            f'text-transform:uppercase;font-size:14px">{html.escape(label)}</a></td></tr></table>'
         )
     text += f"\n--\nYou're getting this because you signed up at {site}.\nUnsubscribe: {unsubscribe}\n"
 

@@ -43,7 +43,7 @@ SESSION_SECRET=...
 ## One-time Supabase setup
 
 1. **Create the tables.** In the Supabase dashboard, open SQL Editor and run
-   the contents of `supabase/migrations/20261015000000_site_data.sql`. Or use
+   the contents of each file in `supabase/migrations/`, oldest first. Or use
    the CLI: `supabase login`, then `supabase link --project-ref xrakfsbzwzchnplfjney`,
    then `supabase db push`. This creates the tables, the send functions, the
    public `media` bucket for uploads, and the four starter tracks from the
@@ -92,6 +92,14 @@ from the same network lock it out for 15 minutes. Logins last 12 hours.
 first four) is built from the `tracks` table. New tracks go to the top, and
 the arrows reorder them. Cover art and audio files upload straight from the
 browser to the `media` storage bucket.
+
+A track's uploaded audio plays on the page: a play button on the cover and a
+seek bar under it, one song at a time (`server/static/site.js`). The page
+never links to the audio file, and the admin won't save a streaming link that
+points straight at one. The optional streaming link (Spotify, Apple Music…)
+shows as a button under the song. This stops casual downloading, not a
+determined visitor: anything a browser can play can be saved from its
+developer tools or recorded.
 
 **Newsletter.** Write a subject and message, optionally feature a track, send
 yourself a test, then send to everyone. Each subscriber gets their own email
