@@ -54,7 +54,7 @@
 
   // ---------- tabs ----------
 
-  var tabs = ['newsletter', 'music', 'subscribers'];
+  var tabs = ['newsletter', 'music', 'content', 'subscribers'];
 
   function showTab(name) {
     tabs.forEach(function (tab) {
@@ -348,12 +348,13 @@
     showAudio();
   }
 
-  function upload(fileInput, target, after) {
+  function upload(fileInput, target, after, status, saveButton) {
     var file = fileInput.files[0];
     if (!file) return;
-    var status = $('track-status');
+    status = status || $('track-status');
+    saveButton = saveButton || $('track-save');
     setStatus(status, 'Uploading ' + file.name + '…');
-    $('track-save').disabled = true;
+    saveButton.disabled = true;
     // The server hands out a one-time upload URL; the file goes straight to
     // Supabase Storage, so large audio files never pass through the server.
     var publicUrl;
@@ -380,7 +381,7 @@
       .catch(function (error) { setStatus(status, error.message, 'error'); })
       .then(function () {
         fileInput.value = '';
-        $('track-save').disabled = false;
+        saveButton.disabled = false;
       });
   }
 
@@ -416,6 +417,166 @@
       .catch(function (error) { setStatus(status, error.message, 'error'); })
       .then(function () { $('track-save').disabled = false; });
   });
+
+  // ---------- home page ----------
+
+  // The server describes each section's fields (see server/content.py), and
+  // the forms are built from that, so a new field only needs adding there.
+
+  var fieldCount = 0;
+
+  function fieldId() { fieldCount += 1; return 'content-field-' + fieldCount; }
+
+  function hintFor(spec) {
+    return spec.hint ? el('p', { class: 'hint', text: spec.hint }) : null;
+  }
+
+  // One input. Returns { node, read } where read() gives its current value.
+  function buildField(spec, value, status, saveButton) {
+    var id = fieldId();
+    var input;
+    if (spec.kind === 'text' && spec.max >= 300) {
+      input = el('textarea', { id: id, maxlength: String(spec.max), rows: '3' });
+    } else {
+      input = el('input', { id: id, type: spec.kind === 'email' ? 'email' : 'text', maxlength: String(spec.max) });
+    }
+    input.value = value || '';
+    if (spec.kind !== 'image') {
+      return {
+        node: el('div', { class: 'field' }, [el('label', { for: id, text: spec.label }), input, hintFor(spec)]),
+        read: function () { return input.value.trim(); }
+      };
+    }
+    var preview = el('img', { class: 'photo-preview', alt: '' });
+    function showPreview() {
+      preview.hidden = !input.value.trim();
+      if (input.value.trim()) preview.src = input.value.trim();
+    }
+    var file = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', 'aria-label': 'Upload ' + spec.label.toLowerCase() });
+    file.addEventListener('change', function () { upload(file, input, showPreview, status, saveButton); });
+    input.addEventListener('change', showPreview);
+    input.setAttribute('placeholder', 'https://… (or upload above)');
+    showPreview();
+    return {
+      node: el('div', { class: 'field' }, [
+        el('label', { for: id, text: spec.label }), preview,
+        el('div', { class: 'upload-row' }, [file]), input, hintFor(spec)
+      ]),
+      read: function () { return input.value.trim(); }
+    };
+  }
+
+  // A list (show dates, about facts): rows that can be added, moved, removed.
+  function buildList(spec, items) {
+    var rows = [];
+    var holder = el('div', { class: 'list-items' });
+    var addButton = el('button', { class: 'secondary small', type: 'button', text: 'Add' });
+
+    function render() {
+      holder.textContent = '';
+      if (!rows.length) holder.appendChild(el('p', { class: 'muted small', text: 'None yet.' }));
+      rows.forEach(function (row, index) {
+        holder.appendChild(el('div', { class: 'list-item' }, [
+          el('div', { class: 'list-item-head' }, [
+            el('strong', { text: spec.label.replace(/s$/, '') + ' ' + (index + 1) }),
+            el('div', { class: 'actions' }, [
+              el('button', { class: 'secondary small', type: 'button', text: '↑', 'aria-label': 'Move up',
+                onclick: function () { move(index, -1); } }),
+              el('button', { class: 'secondary small', type: 'button', text: '↓', 'aria-label': 'Move down',
+                onclick: function () { move(index, 1); } }),
+              el('button', { class: 'danger small', type: 'button', text: 'Remove',
+                onclick: function () { rows.splice(index, 1); render(); } })
+            ])
+          ]),
+          el('div', { class: 'row' }, row.fields.map(function (f) { return f.node; }))
+        ]));
+      });
+      addButton.disabled = rows.length >= spec.max;
+    }
+
+    function addRow(item) {
+      rows.push({ fields: spec.fields.map(function (sub) {
+        var built = buildField(sub, item[sub.name]);
+        built.name = sub.name;
+        return built;
+      }) });
+    }
+
+    function move(index, step) {
+      var target = index + step;
+      if (target < 0 || target >= rows.length) return;
+      rows.splice(target, 0, rows.splice(index, 1)[0]);
+      render();
+    }
+
+    addButton.addEventListener('click', function () { addRow({}); render(); });
+    (items || []).forEach(addRow);
+    render();
+
+    return {
+      node: el('div', { class: 'field' }, [el('span', { class: 'label', text: spec.label }), holder,
+        el('div', { class: 'row' }, [addButton])]),
+      read: function () {
+        return rows.map(function (row) {
+          var item = {};
+          row.fields.forEach(function (f) { item[f.name] = f.read(); });
+          return item;
+        });
+      }
+    };
+  }
+
+  function buildSection(section) {
+    var status = el('p', { class: 'status', role: 'status' });
+    var save = el('button', { type: 'submit', text: 'Save' });
+    var reset = el('button', { class: 'secondary', type: 'button', text: 'Back to the design’s text', hidden: '' });
+    if (section.saved) reset.hidden = false;
+    var fields = section.fields.map(function (spec) {
+      var built = spec.kind === 'list'
+        ? buildList(spec, section.value[spec.name])
+        : buildField(spec, section.value[spec.name], status, save);
+      built.name = spec.name;
+      return built;
+    });
+    var form = el('form', { class: 'card content-section', novalidate: '' }, [
+      el('h2', { text: section.title })
+    ].concat(fields.map(function (f) { return f.node; })).concat([
+      el('div', { class: 'row' }, [save, reset]), status
+    ]));
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var value = {};
+      fields.forEach(function (f) { value[f.name] = f.read(); });
+      save.disabled = true;
+      setStatus(status, 'Saving…');
+      api('PUT', '/api/admin/content/' + section.name, value)
+        .then(function () {
+          setStatus(status, 'Saved. It’s live on the site now.', 'ok');
+          reset.hidden = false;
+        })
+        .catch(function (error) { setStatus(status, error.message, 'error'); })
+        .then(function () { save.disabled = false; });
+    });
+
+    reset.addEventListener('click', function () {
+      if (!window.confirm('Put “' + section.title + '” back to the text from the design? Your saved changes to it will be lost.')) return;
+      api('DELETE', '/api/admin/content/' + section.name, {})
+        .then(loadContent)
+        .catch(function (error) { setStatus(status, error.message, 'error'); });
+    });
+    return form;
+  }
+
+  function loadContent() {
+    return api('GET', '/api/admin/content').then(function (data) {
+      var holder = $('content-sections');
+      holder.textContent = '';
+      data.sections.forEach(function (section) { holder.appendChild(buildSection(section)); });
+    }).catch(function (error) {
+      setStatus($('content-status'), error.message, 'error');
+    });
+  }
 
   // ---------- subscribers ----------
 
@@ -465,6 +626,7 @@
 
   var initial = window.location.hash.slice(1);
   showTab(tabs.indexOf(initial) !== -1 ? initial : 'newsletter');
+  loadContent();
   Promise.all([loadSession(), loadTracks(), loadSubscribers(), loadCampaigns()]).catch(function (error) {
     setStatus($('compose-status'), error.message, 'error');
   });

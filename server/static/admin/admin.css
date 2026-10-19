@@ -252,6 +252,17 @@ main { padding-top: 40px; padding-bottom: 96px; }
   .card { padding: 18px; }
 }
 
+/* ---------- home page ---------- */
+
+.content-section { max-width: 760px; }
+.content-section textarea { min-height: 96px; }
+.list-items { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.list-item { padding: 16px; border: 1px solid var(--ink-3); border-radius: 2px; }
+.list-item-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.list-item .row { align-items: flex-start; }
+.list-item .row > .field { flex: 1 1 180px; }
+.photo-preview { width: 140px; aspect-ratio: 7 / 8; object-fit: cover; border: 4px solid #FAFAF7; background: #546067; }
+
 /* ---------- unsubscribe ---------- */
 
 .plain {

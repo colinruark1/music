@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import config  # first: loads .env before anything reads settings
 import auth
+import content
 import db
 import mailer
 import music
@@ -99,6 +100,7 @@ class Handler(BaseHTTPRequestHandler):
                 page = render_page(PAGES[path])
             except (OSError, ValueError) as error:
                 return self.send_text(500, f"Could not render {PAGES[path]}: {error}")
+            page = content.apply_content(page)
             if path in MUSIC_GRIDS:
                 page = music.apply_catalog(page, MUSIC_GRIDS[path])
             return self.send_body(200, page.encode("utf-8"), "text/html; charset=utf-8")
@@ -231,6 +233,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(200, {"ok": True, "tracks": music.load()})
         if path == "/api/admin/campaigns":
             return self.send_json(200, {"ok": True, "campaigns": mailer.campaigns()})
+        if path == "/api/admin/content":
+            return self.send_json(200, {"ok": True, "sections": content.for_admin()})
         self.send_json(404, {"ok": False, "error": "Not found"})
 
     def admin_write(self, method):
@@ -276,6 +280,19 @@ class Handler(BaseHTTPRequestHandler):
         if track_match and method == "DELETE":
             if not music.delete(track_match.group(1)):
                 return self.send_json(404, {"ok": False, "error": "That track is gone."})
+            return self.send_json(200, {"ok": True})
+
+        content_match = re.fullmatch(r"/api/admin/content/(\w+)", path)
+        if content_match and method == "PUT":
+            value, error = content.clean(content_match.group(1), payload)
+            if error:
+                return self.send_json(400, {"ok": False, "error": error})
+            content.save(content_match.group(1), value, user)
+            return self.send_json(200, {"ok": True, "value": value})
+        if content_match and method == "DELETE":
+            if content_match.group(1) not in content.SECTIONS:
+                return self.send_json(404, {"ok": False, "error": "That section doesn't exist."})
+            content.reset(content_match.group(1))
             return self.send_json(200, {"ok": True})
 
         if method == "DELETE" and path == "/api/admin/subscribers":

@@ -33,50 +33,50 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #F1EE
 <section id="sessions" class="sand" style="background: #D8D4C8; color: #1B242A">
 <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px 104px; display: flex; flex-direction: column; gap: 28px">
 <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px">
-<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">The Show</h2>
-<p style="margin: 0; max-width: 26em; color: #3F4A51">Shows all across the U.S.</p>
+<h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 84px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase" data-edit="shows.heading">The Show</h2>
+<p data-edit="shows.intro" style="margin: 0; max-width: 26em; color: #3F4A51">Shows all across the U.S.</p>
 </div>
 
-<div style="display: flex; flex-direction: column; border-top: 1.5px solid #1B242A">
-
-<div style="padding: 22px 0; border-bottom: 1.5px solid #1B242A; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
-<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
-<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
-<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
-<span style="color: #3F4A51">[Town, State]</span>
-</div>
-<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
-<a href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
-</div>
+<div data-edit-list="shows.dates" data-edit-empty="New dates are on the way." style="display: flex; flex-direction: column; border-top: 1.5px solid #1B242A">
 
 <div style="padding: 22px 0; border-bottom: 1.5px solid #1B242A; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
-<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div data-edit-field="date" style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
 <div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
-<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
-<span style="color: #3F4A51">[Town, State]</span>
+<span data-edit-field="place" style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span data-edit-field="town" style="color: #3F4A51">[Town, State]</span>
 </div>
-<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
-<a href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
+<div data-edit-field="details" style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
+<a data-edit-field="button_label" data-edit-field-href="button_link" data-edit-field-hide="button_link" href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
 </div>
 
 <div style="padding: 22px 0; border-bottom: 1.5px solid #1B242A; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
-<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div data-edit-field="date" style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
 <div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
-<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
-<span style="color: #3F4A51">[Town, State]</span>
+<span data-edit-field="place" style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span data-edit-field="town" style="color: #3F4A51">[Town, State]</span>
 </div>
-<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
-<a href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
+<div data-edit-field="details" style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
+<a data-edit-field="button_label" data-edit-field-href="button_link" data-edit-field-hide="button_link" href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
 </div>
 
 <div style="padding: 22px 0; border-bottom: 1.5px solid #1B242A; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
-<div style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div data-edit-field="date" style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
 <div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
-<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
-<span style="color: #3F4A51">[Town, State]</span>
+<span data-edit-field="place" style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span data-edit-field="town" style="color: #3F4A51">[Town, State]</span>
 </div>
-<div style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
-<a href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
+<div data-edit-field="details" style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
+<a data-edit-field="button_label" data-edit-field-href="button_link" data-edit-field-hide="button_link" href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
+</div>
+
+<div style="padding: 22px 0; border-bottom: 1.5px solid #1B242A; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px">
+<div data-edit-field="date" style="flex: 0 0 150px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase">[Mon 00]</div>
+<div style="flex: 2 1 240px; min-width: 0; display: flex; flex-direction: column">
+<span data-edit-field="place" style="font-family: 'Instrument Serif', Georgia, serif; font-size: 28px; line-height: 1.15">[Place Name]</span>
+<span data-edit-field="town" style="color: #3F4A51">[Town, State]</span>
+</div>
+<div data-edit-field="details" style="flex: 1 1 200px; min-width: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: #3F4A51">[Time] · [Location]</div>
+<a data-edit-field="button_label" data-edit-field-href="button_link" data-edit-field-hide="button_link" href="/subscribe" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; box-sizing: border-box; padding: 0 24px; border-radius: 2px; background: #1B242A; color: #F1EEE6; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; text-decoration: none">Save a spot</a>
 </div>
 
 </div>
@@ -87,13 +87,13 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #F1EE
 <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px">
 <div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.16em; text-transform: uppercase">Megan Faith</div>
 <div style="display: flex; flex-wrap: wrap; gap: 0 8px; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase">
-<a href="#top" style="padding: 12px 8px">[Streaming link]</a>
-<a href="https://www.instagram.com/meganfaithmusic/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 8px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"></circle></svg>Instagram</a>
-<a href="https://www.tiktok.com/@meganfaithmusic" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 8px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"></path></svg>TikTok</a>
-<a href="#top" style="padding: 12px 8px">[Booking email]</a>
+<a data-edit="links.streaming_label" data-edit-href="links.streaming_link" data-edit-hide="links.streaming_link" href="#top" style="padding: 12px 8px">[Streaming link]</a>
+<a data-edit-href="links.instagram" data-edit-hide="links.instagram" href="https://www.instagram.com/meganfaithmusic/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 8px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"></circle></svg>Instagram</a>
+<a data-edit-href="links.tiktok" data-edit-hide="links.tiktok" href="https://www.tiktok.com/@meganfaithmusic" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 8px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"></path></svg>TikTok</a>
+<a data-edit="links.booking_label" data-edit-href="links.booking_href" data-edit-hide="links.booking_email" href="#top" style="padding: 12px 8px">[Booking email]</a>
 </div>
 </div>
-<div style="font-size: 14px; color: #C3C9CA">Hope you like listening to the new tracks!</div>
+<div data-edit="footer.note" style="font-size: 14px; color: #C3C9CA">Hope you like listening to the new tracks!</div>
 <a href="/privacy" style="align-self: flex-start; font-size: 14px; color: #C3C9CA">Privacy Policy</a>
 </footer>
 

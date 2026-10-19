@@ -19,7 +19,7 @@ standard library only.
 | `POST /api/subscribe` | Newsletter sign-up, body `{"email": "..."}` |
 | `/unsubscribe` | Where the unsubscribe link in every newsletter lands |
 | `/login` | Admin login (not linked from the site) |
-| `/admin` | Admin app: send newsletters, manage the Music catalog, see subscribers |
+| `/admin` | Admin app: send newsletters, manage the Music catalog, edit the home page, see subscribers |
 | `/api/health` | Returns `{"ok": true}` and any settings that are missing |
 
 ## Settings
@@ -100,6 +100,16 @@ points straight at one. The optional streaming link (Spotify, Apple Music…)
 shows as a button under the song. This stops casual downloading, not a
 determined visitor: anything a browser can play can be saved from its
 developer tools or recorded.
+
+**Home page.** Edit the words, photo and links of every home page section:
+the top of the page, the Music intro, Shows (a list of dates), About, Subscribe,
+Links (Instagram, TikTok, streaming, booking email) and the footer note. Each
+section saves on its own to the `site_content` table and shows on every page
+that has it, so Shows also changes `/tour` and the footer changes everywhere.
+A section never saved keeps the design's text, and "Back to the design's text"
+undoes a section's edits. The design files mark what's editable with
+`data-edit` attributes (see `server/content.py`); keep them when copying
+designs over from the canvas, or that text stops being editable.
 
 **Newsletter.** Write a subject and message, optionally feature a track, send
 yourself a test, then send to everyone. Each subscriber gets their own email

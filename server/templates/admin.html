@@ -15,6 +15,7 @@
     <nav class="tabs" role="tablist" aria-label="Admin sections">
       <button role="tab" id="tab-newsletter" aria-controls="panel-newsletter" aria-selected="true">Newsletter</button>
       <button role="tab" id="tab-music" aria-controls="panel-music" aria-selected="false">Music</button>
+      <button role="tab" id="tab-content" aria-controls="panel-content" aria-selected="false">Home page</button>
       <button role="tab" id="tab-subscribers" aria-controls="panel-subscribers" aria-selected="false">Subscribers</button>
     </nav>
     <div class="who"><span id="who"></span><button id="logout" class="secondary small" type="button">Log out</button></div>
@@ -136,6 +137,19 @@
       <p id="track-status" class="status" role="status"></p>
     </form>
   </div>
+</section>
+
+<!-- ============ Home page ============ -->
+<section id="panel-content" role="tabpanel" aria-labelledby="tab-content" hidden>
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Words and photos</p>
+      <h1>Home page</h1>
+    </div>
+    <p class="muted small">Each section also shows on its own page: Shows on <a href="/tour" target="_blank" rel="noopener">/tour</a>, About on <a href="/about" target="_blank" rel="noopener">/about</a>, Subscribe on <a href="/subscribe" target="_blank" rel="noopener">/subscribe</a>. Links and Footer are on every page.</p>
+  </div>
+  <p id="content-status" class="status" role="status"></p>
+  <div id="content-sections"></div>
 </section>
 
 <!-- ============ Subscribers ============ -->
