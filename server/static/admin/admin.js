@@ -348,17 +348,46 @@
     showAudio();
   }
 
+  // Phone photos are often stored sideways with a flag saying "turn me".
+  // Browsers obey it, but link previews and some email apps don't, so each
+  // photo is redrawn upright (and at most 2400px) before it's uploaded. That
+  // also drops hidden photo data, like where it was taken.
+  var MAX_PHOTO_SIDE = 2400;
+
+  function prepareImage(file) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || !window.createImageBitmap) return Promise.resolve(file);
+    return createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bitmap) {
+      var scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      var type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) {
+          if (!blob) return resolve(file);
+          var name = file.name.replace(/\.[^.]*$/, '') + (type === 'image/png' ? '.png' : '.jpg');
+          resolve(new File([blob], name, { type: type }));
+        }, type, 0.9);
+      });
+    }).catch(function () { return file; });
+  }
+
   function upload(fileInput, target, after, status, saveButton) {
-    var file = fileInput.files[0];
-    if (!file) return;
+    var picked = fileInput.files[0];
+    if (!picked) return;
     status = status || $('track-status');
     saveButton = saveButton || $('track-save');
-    setStatus(status, 'Uploading ' + file.name + '…');
+    setStatus(status, 'Uploading ' + picked.name + '…');
     saveButton.disabled = true;
     // The server hands out a one-time upload URL; the file goes straight to
     // Supabase Storage, so large audio files never pass through the server.
-    var publicUrl;
-    api('POST', '/api/admin/uploads', { name: file.name, size: file.size })
+    var publicUrl, file;
+    prepareImage(picked)
+      .then(function (prepared) {
+        file = prepared;
+        return api('POST', '/api/admin/uploads', { name: file.name, size: file.size });
+      })
       .then(function (data) {
         publicUrl = data.url;
         return fetch(data.upload_url, {
@@ -375,7 +404,7 @@
       })
       .then(function () {
         target.value = publicUrl;
-        setStatus(status, 'Uploaded ' + file.name + '.', 'ok');
+        setStatus(status, 'Uploaded ' + picked.name + '.', 'ok');
         if (after) after();
       })
       .catch(function (error) { setStatus(status, error.message, 'error'); })

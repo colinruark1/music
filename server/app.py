@@ -100,7 +100,7 @@ class Handler(BaseHTTPRequestHandler):
                 page = render_page(PAGES[path])
             except (OSError, ValueError) as error:
                 return self.send_text(500, f"Could not render {PAGES[path]}: {error}")
-            page = content.apply_content(page)
+            page = content.apply_content(page, mailer.settings()["site_url"])
             if path in MUSIC_GRIDS:
                 page = music.apply_catalog(page, MUSIC_GRIDS[path])
             return self.send_body(200, page.encode("utf-8"), "text/html; charset=utf-8")

@@ -24,6 +24,8 @@ import db
 from pages import render_page
 
 MIGRATION = "supabase/migrations/20261019010000_site_content.sql"
+# The link preview photo until a hero photo is saved: the design's hero photo.
+DEFAULT_PREVIEW = ("/assets/hero-polaroid.jpg", "Playing an acoustic guitar on a balcony in the evening sun")
 
 # section -> (title, source page for the current text, fields)
 # field -> (label, kind, max length, hint); a list's "max length" is its item count.
@@ -219,13 +221,15 @@ def _read_marks(fragment, prefix):
 
 # ---------- applying it to a page ----------
 
-def apply_content(page):
-    """Swap the marked text on a page for the copy saved in the admin."""
+def apply_content(page, site_url):
+    """Swap the marked text on a page for the copy saved in the admin, and
+    add the link preview tags."""
     try:
         saved = load_saved()
     except db.DatabaseError as error:
         print(f"Site content unavailable, showing the design's text: {error}", file=sys.stderr)
-        return page
+        saved = {}
+    page = _add_preview(page, saved.get("hero", {}), site_url)
     if not saved:
         return page
     links = saved.get("links")
@@ -237,6 +241,27 @@ def apply_content(page):
         return saved.get(section, {}).get(field)
 
     return _fill(_fill_lists(page, value_of), value_of, "data-edit")
+
+
+def _add_preview(page, hero, site_url):
+    """Tell link previews (iMessage, Slack, Facebook…) which photo and title
+    to show, instead of letting them pick a picture from the page."""
+    photo = hero.get("photo") or DEFAULT_PREVIEW[0]
+    alt = hero.get("photo_alt") if hero.get("photo") else DEFAULT_PREVIEW[1]
+    if not photo.startswith("http"):
+        photo = site_url + photo
+    title = re.search(r"<title>(.*?)</title>", page, re.S)
+    tags = [
+        ("og:type", "website"),
+        ("og:title", html.unescape(title.group(1)) if title else "Megan Faith"),
+        ("og:image", photo),
+        ("og:image:alt", alt or ""),
+    ]
+    if hero.get("subtitle"):
+        tags.append(("og:description", hero["subtitle"]))
+    meta = "".join(f'<meta property="{name}" content="{html.escape(value)}">\n' for name, value in tags)
+    meta += '<meta name="twitter:card" content="summary_large_image">\n'
+    return page.replace("</head>", meta + "</head>", 1)
 
 
 def _fill_lists(page, value_of):
